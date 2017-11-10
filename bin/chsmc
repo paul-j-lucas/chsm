@@ -1,0 +1,161 @@
+#! /bin/sh
+##
+#     CHSM Language System
+#     chsmc -- CHSM-to-C++ compiler driver script
+#
+#     Copyright (C) 1996-2013  Paul J. Lucas & Fabio Riccardi
+#
+#     This program is free software; you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation; either version 2 of the License, or
+#     (at your option) any later version.
+#     
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#     
+#     You should have received a copy of the GNU General Public License
+#     along with this program; if not, write to the Free Software
+#     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+##
+#   This code is Bourne Shell for maximal portability.
+##
+
+###############################################################################
+#
+#   Environment
+#
+###############################################################################
+
+# C++ compiler.
+CC=${CC:-"g++"}
+
+# This must match the definition in config/config.mk.  If it's commented out
+# there, it must be commented out here.
+MULTITHREADED="-DCHSM_MULTITHREADED -D_REENTRANT"
+
+# C++ compiler flags.
+CCFLAGS=${CCFLAGS-"-O2 $MULTITHREADED"}
+
+# Intermediate C++ declaration file name extension; usually ".h", ".H", ".hh",
+# or ".hpp".
+CCHEXT=${CCHEXT:-".h"}
+
+# Intermediate C++ definition file name extension; usually ".c", ".C", ".cc",
+# or ".cpp".
+CCCEXT=${CCCEXT:-".c"}
+
+# CHSM-to-C++ compiler.
+CHSM2CXX=${CHSM2CXX:-"chsm2c++"}
+
+# CHSM-to-C++ compiler flags.
+CHSM2CXX_FLAGS=${CHSM2CXX_FLAGS-""}
+
+# Auto-specified -I directive(s).  Must specify at least where the CHSM include
+# file (chsm.h) is.
+CHSM_I=${CHSM_I-"-I/usr/local/include"}
+
+# Auto-specified -L directive(s).  Must specify at least where the CHSM library
+# file (libchsm.a) is.
+CHSM_L=${CHSM_L-"-L/usr/local/lib"}
+
+# Library to link against for POSIX threads.  BSD uses -pthread (no 'l').
+PTHREAD_LINK=-lpthread
+
+# Auto-specified -l directive(s).  Must specify at least the CHSM library file
+# (libchsm.a).
+CHSM_l=${CHSM_l:-"-lchsm $PTHREAD_LINK"}
+
+########### You shouldn't have to change anything below this line. ###########
+
+CC_I_opt="$CHSM_I"
+CC_L_opt="$CHSM_L"
+CC_l_opt="$CHSM_l"
+
+ME=$0; ME=`expr $ME : '.*/\(.*\)'`
+
+usage()
+{
+  cat >&2 <<!
+usage: $ME [-cEgknPvV] [-Dname[=def]]... [-Ipath]... [-Lpath]...
+       [-llibrary]... [-o output-file] [-O\",other\"] file.chsmc
+!
+}
+
+###############################################################################
+#
+#   Process command-line options
+#
+###############################################################################
+
+while getopts cD:EgI:kl:L:no:O:PvV opt
+do
+  case $opt in
+  c) CC_c_opt=-c ;;
+  D) CC_D_opt="$CC_D_opt -D$OPTARG" ;;
+  E) to_stdout_opt=true keep_files_opt=true ;;
+  g) CC_g_opt=-g ;;
+  I) CC_I_opt="$CC_I_opt -I$OPTARG" ;;
+  k) keep_files_opt=true ;;
+  l) CC_l_opt="$CC_l_opt -l$OPTARG" ;;
+  L) CC_L_opt="$CC_L_opt -L$OPTARG" ;;
+  n) dry_run_opt=true ;;
+  o) CC_o_opt="-o $OPTARG" ;;
+  O) CC_other="$CC_other $OPTARG" ;;
+  P) no_lines_opt=-P ;;
+  v) $CHSM2CXX -v; exit 0 ;;
+  V) verbose_opt=true ;;
+  ?) usage; exit 1 ;;
+  esac
+done
+shift `expr $OPTIND - 1`
+[ $# -ne 1 ] && { usage; exit 1; }
+
+###############################################################################
+#
+#   Set up files
+#
+###############################################################################
+
+CHSMC_FILE=$1
+STRIP=`expr $CHSMC_FILE : '\(..*\)\...*'`
+DEC_FILE=$STRIP$CCHEXT
+DEF_FILE=$STRIP$CCCEXT
+
+##### Trap to remove intermediate C++ files
+[ "$keep_files_opt" = "" -a "$dry_run_opt" = "" ] &&
+  trap 'x=$?; rm -f $DEC_FILE $DEF_FILE; exit $x' 0 1 2 15
+
+###############################################################################
+#
+#   Go!
+#
+###############################################################################
+
+##### If going to stdout, just run through CHSM-to-C++ compiler
+COMMON="$CHSM2CXX $CHSM2CXX_FLAGS $no_lines_opt"
+if [ "$to_stdout_opt" != "" ]
+then
+  CMD="$COMMON -E $CHSMC_FILE"
+  [ "$verbose_opt" != "" ] && echo $CMD
+  [ "$dry_run_opt" = "" ] && $CMD
+  exit $?
+else
+  CMD="$COMMON $CHSMC_FILE $DEC_FILE $DEF_FILE"
+  [ "$verbose_opt" != "" ] && echo $CMD
+  [ "$dry_run_opt" = "" ] && { $CMD || exit $?; }
+fi
+
+##### Run through C++ compiler
+COMMON="$CC $CCFLAGS $CC_D_opt $CC_g_opt $CC_I_opt $CC_other"
+if [ "$CC_c_opt" != "" ]
+then CMD="$COMMON -c $DEF_FILE"
+else CMD="$COMMON $CC_L_opt $CC_o_opt $DEF_FILE $CC_l_opt"
+fi
+[ "$verbose_opt" != "" ] && echo $CMD
+[ "$dry_run_opt" = "" ] && $CMD
+
+# vim:set et sw=2 ts=2 syntax=sh:

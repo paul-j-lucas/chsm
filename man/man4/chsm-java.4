@@ -1,0 +1,876 @@
+'\" t
+.\"     CHSM Language System
+.\"     chsm-java.4 -- Language description manual page
+.\"
+.\"     Copyright (C) 2004-2013  Paul J. Lucas & Fabio Riccardi
+.\"
+.\"     This program is free software; you can redistribute it and/or modify
+.\"     it under the terms of the GNU General Public License as published by
+.\"     the Free Software Foundation; either version 2 of the License, or
+.\"     (at your option) any later version.
+.\"     
+.\"     This program is distributed in the hope that it will be useful,
+.\"     but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"     GNU General Public License for more details.
+.\"     
+.\"     You should have received a copy of the GNU General Public License
+.\"     along with this program; if not, write to the Free Software
+.\"     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.\" ---------------------------------------------------------------------------
+.\" define code-start macro
+.de cS
+.if !'\\$1'0' .sp
+.nf
+.RS 5
+.ft CW
+..
+.\" define code-end macro
+.de cE
+.ft 1
+.RE
+.fi
+.if !'\\$1'0' .sp
+..
+.\" define grammar-start macro
+.de gS
+.PP
+.RS 5
+.ft I
+.vs 11pt
+..
+.\" define grammar-end macro
+.de gE
+.vs
+.RE
+.ft 1
+.PP
+..
+.\" ---------------------------------------------------------------------------
+.TH \f3CHSM-JAVA\f1 4 "July 2, 2013" "CHSM" "CHSM Language System"
+.SH "NAME"
+CHSM-Java \- Concurrent, Hierarchical, Finite State Machine specification language for Java
+.SH "SYNOPSIS"
+.nf
+.I declarations
+\f(CW%%\f1
+.I description
+\f(CW%%\f1
+.I user-code
+.fi
+.SH "DESCRIPTION"
+The CHSM specification language is a text-based means for specifying
+.IR statecharts .
+A statechart is graphical formalism for specifying
+concurrent, hierarchical, finite state machines.
+Such machines are useful for developing reactive systems.
+Additionally, arbitrary Java code can be integrated in a manner similar
+to the way
+.BR yacc (1)
+allows integration of arbitrary C code.
+.SH "LEXICAL CONVENTIONS"
+.SS "File Format"
+A CHSM description file is an ordinary text file with three sections:
+declarations, description, and user-code.
+The sections are separated by the \f(CW%%\f1 token
+that must be at the beginning of a line.
+The declarations and user-code sections may be empty;
+if the user-code section is empty,
+then the trailing \f(CW%%\f1 may be omitted.
+If present, the declarations and user-code sections are passed through,
+untouched, to the underlying Java compiler.
+The description file is otherwise free-format.
+The smallest legal CHSM description file is:
+.cS
+%%
+chsm smallest is { }
+.cE
+The declarations section is meant to contain
+any Java declarations or definitions
+needed to compile the resultant Java code.
+.SS "Comments"
+Both \f(CW/* ... */\f1 and \f(CW//\f1 comments may be used anywhere
+in the CHSM description file where whitespace is legal.
+.SS "Identifiers"
+Identifiers follow the same rules for what constitutes a valid identifier
+in Java.
+.SS "Keywords"
+The following identifiers are reserved for use as keywords
+and may not be used otherwise:
+.PP
+.RS 5
+.ft CW
+.TS
+tab( ) ;
+l l l l l l l l .
+chsm cluster deep enter event exit final history
+in is param public set state upon
+.TE
+.RE
+.ft 1
+.PP
+Additionally, all Java keywords are also reserved.
+.PP
+The following characters and character-combinations
+are used as punctuation or operators:
+.PP
+.RS 5
+.ft CW
+.TS
+tab( ) ;
+l l l l l l l l l .
+, ; -> . :: %% %{ %} $
+[ ] ( ) { } < > 
+.TE
+.RE
+.ft 1
+.PP
+.SH "BASIC CONCEPTS"
+.SS "Scope"
+There are four kinds of scope: global, CHSM, local, and code-block.
+.PP
+.RS 5
+.I "Global"
+scope exists in the declarations and user-code sections.
+The only thing injected into the global scope from the description section
+is the name of the CHSM.
+.PP
+.I "CHSM"
+scope exists inside the body of the CHSM description.
+State and event names are local to CHSM scope.
+.PP
+.I "Local"
+scope exists only within clusters and sets
+and only for child-state identifiers.
+One identifier may be hidden by another due to a child-state declaration
+with an equal name in a lexically-enclosed scope.
+Such an identifier can still be referenced by using one of the scope-resolution
+operators (see STATE NAMES).
+.PP
+.I "Code-block"
+scope exists only within \f(CW%{ %}\f1 pairs.
+It is treated exactly like a Java method.
+All state names and all event names are in the scope of all blocks.
+.RE
+.SS "Initialization"
+A CHSM is fully initialized upon definition.
+States are not automatically entered, however;
+nor are they automatically exited upon destruction.
+.cS
+%%
+chsm my_machine is {
+    // ...
+}
+
+%%
+public class Example {
+    public static void main( String args[] ) {
+        my_machine m = new my_machine();
+        m.enter();      // enter initial states
+        // ...
+        m.exit();       // exit all states
+    }
+}
+.cE 0
+.SS "Types"
+There are five fundamental types: machine, state, cluster, set, and event;
+each is an instance of the
+.BR CHSM.Machine (3),
+.BR CHSM.State (3),
+.BR CHSM.Cluster (3),
+.BR CHSM.Set (3),
+or
+.BR CHSM.Event (3)
+class, respectively.
+.SH "MACHINE DESCRIPTIONS"
+Machine descriptions have the form:
+.gS
+.TS
+tab(!) ;
+l l .
+machine-desc:!\f3\s+2[\s-2\fP\f(CWpublic\fP\f3\s+2]\s-2\fP \f(CWchsm\fP state-decl \f3\s+2[\s-2\fP\f(CW(\fPparam-list\f(CW)\fP\f3\s+2]\s-2\fP \f3\s+2[\s-2\fPhistory-decl\f3\s+2]\s-2\fP \f3\s+2[\s-2\fPmachine-block\f3\s+2]\s-2\fP parent-body
+
+state-decl:!\f3\s+2[\s-2\fP\f(CW<\fPclass-name\f(CW>\fP\f3\s+2]\s-2\fP identifier
+
+param-list:!Java-function-formal-argument-declaration-list
+
+history-decl:!\f3\s+3[\s-2\fP\f(CWdeep\fP\f3\s+2]\s-2\fP \f(CWhistory\fP
+
+machine-block:!\f(CW{\fP \f3\s+2[\s-2\fPenter-exit-blocks\f3\s+2]\s-2\fP \f(CW}\fP
+
+parent-body:!\f(CWis {\fP \f3\s+2[\s-2\fPdescription-list\f3\s+2]\s-2\fP \f(CW}\fP
+
+description-list:!description \f3\s+2[\s-2\fPdescription-list\f3\s+2]\s-2\fP
+
+description:!state-desc
+!cluster-desc
+!set-desc
+!event-desc
+.TE
+.gE
+If \f(CWpublic\f1 is given,
+the resulting Java class implementing the CHSM will be declared public.
+.PP
+If \f(CW<\f2class-name\f(CW>\f1 is given,
+said class must have been derived (directly or indirectly)
+from \f(CWCHSM.Machine\f1.
+.PP
+States declared in
+.I description-list
+are child states of an implicit cluster named \f(CWroot\f1.
+Declaring a CHSM with \f(CWhistory\f1 gives the \f(CWroot\f1 cluster a history.
+See
+.BR CHSM.Cluster (3)
+for more information.
+.SS "Parameter Lists"
+Parameter lists are based on Java function
+.I formal
+argument declarations:
+.cS
+chsm my_machine( int x ) is {
+.cE
+See
+.BR CHSM.Machine (3)
+for more information.
+.SS "Enter-Exit-Blocks"
+\f2Enter-exit-blocks\f1 are arbitrary Java code
+executed upon CHSM or state entrances and/or exits.
+They have the form:
+.gS
+.TS
+tab(!) ;
+l l .
+enter-exit-blocks:!enter-exit-block \f3\s+2[\s-2\fPenter-exit-block\f3\s+2]\s-2\fP
+
+enter-exit-block:!\f(CWupon\fP enter-exit-selector \f(CW%{\fP Java-statement-list \f(CW%}\fP
+
+enter-exit-selector:!\f(CWenter\fP
+!\f(CWexit\fP
+.TE
+.gE
+For example:
+.cS
+state s {
+    upon enter %{
+        System.out.println( "hello, world" );
+    %}
+    upon exit %{
+        System.out.println( "goodbye, world" );
+    %}
+}
+.cE
+.I Enter-exit-blocks
+are optional.
+At most one of each can be specified
+and they must precede all transition specifications.
+They can be specified in either order with no semantic difference.
+.PP
+Within
+.IR Java-statement-list ,
+the variables \f(CWevent\f1 and \f(CWstate\f1 are available
+and are references to the event that triggered the transition
+and enclosing state, respectively:
+.cS
+    upon enter %{
+        if ( event == alpha )
+            // ...
+    %}
+.cE
+.SH "STATE DESCRIPTIONS"
+Plain-state descriptions have the form:
+.gS
+.TS
+tab(!) ;
+l l .
+state-desc:!\f(CWstate\fP state-decl state-def
+
+state-def:!state-body
+!\f(CW;\fP
+
+state-body:!\f(CW{\fP \f3\s+2[\s-2\fPenter-exit-blocks\f3\s+2]\s-2\fP \f3\s+2[\s-2\fPtransition-list\f3\s+2]\s-2\fP \f(CW}\fP
+.TE
+.gE
+If \f(CW<\f2class-name\f(CW>\f1 is given as part of
+.IR state-decl ,
+said class must have been derived (directly or indirectly)
+from \f(CWCHSM.State\f1.
+See
+.BR CHSM.State (3)
+for more information.
+.PP
+A
+.I state-def
+of just a semicolon functions as a ``sink'';
+such a state can be ``escaped'' from only by means of a transition from its
+parent state:
+.cS
+cluster display( normal, /* ... */, error ) {
+    reset -> display;   // escapes "sink"
+} is {
+    state normal {
+        disaster -> error;
+    }
+    state error;        // "sink"
+}
+.cE
+.SH "CLUSTER DESCRIPTIONS"
+Cluster descriptions have the form:
+.gS
+.TS
+tab(!) ;
+l l .
+cluster-desc:!\f(CWcluster\fP state-decl \f(CW(\fPchild-list\f(CW)\fP \f3\s+2[\s-2\fPhistory-decl\f3\s+2]\s-2\fP \f3\s+2[\s-2\fPstate-body\f3\s+2]\s-2\fP parent-body
+
+child-list:!child-name \f3\s+2[\s-2\fP\f(CW,\fP child-list\f3\s+2]\s-2\fP
+
+child-name:!identifier
+.TE
+.gE
+The
+.I child-list
+declares the names (only) of all child states;
+all child states must be declared:
+.cS
+cluster c(x,y) is {
+    state x;
+    state y;
+    state z;            // error: undeclared child
+}
+.cE
+The order in which child states are declared
+need not match the order in which they are defined.
+The first child-state
+.B defined
+in the
+.I description-list
+is the default child-state.
+.PP
+See
+.BR CHSM.Cluster (3)
+for information about \f(CWhistory\f1.
+.SH "SET DESCRIPTIONS"
+Set descriptions have the form:
+.gS
+.TS
+tab(!) ;
+l l .
+set-desc:!\f(CWset\fP state-decl \f(CW(\fPchild-list\f(CW)\fP \f3\s+2[\s-2\fPstate-body\f3\s+2]\s-2\fP parent-body
+.TE
+.gE
+See
+.BR CHSM.Set (3)
+for more information.
+.SH "EVENT DESCRIPTIONS"
+event descriptions have the form:
+.gS
+.TS
+tab(!) ;
+l l .
+event-desc:!\f(CWevent\fP \f3\s+2[\s-2\fP\f(CW<\fPevent-name\f(CW>\fP\f3\s+2]\s-2\fP identifier \f3\s+2[\s-2\fP\f(CW(\fP\f3\s+2[\s-2\fPparam-list\f3\s+2]\s-2\fP\f(CW)\fP\f3\s+2]\s-2\fP \f3\s+2[\s-2\fPprecondition\f3\s+2]\s-2\fP \f(CW;\fP
+.TE
+.gE
+Parameter declarations for events are the same as those for machine
+descriptions.
+If \f(CW<\f2event-name\f(CW>\f1 is given, said event is a
+.IR "base event" .
+See
+.BR CHSM::event (3)
+for more information.
+.SS "Parameter Lists"
+If an event has been declared with parameters,
+they can be accessed via the special \f(CW$param\fP construct:
+.cS
+event say( String message );
+
+state s {
+    say -> t %{
+        System.out.println( $param( say, message ) );
+    %};
+}
+.cE
+Additionally, all parameters inherited from base events, if any,
+are also accessible via \f(CW$param\fP:
+.cS
+event<say> quote( String author );
+
+state s {
+    quote -> t %{
+        System.out.println(
+            $param( quote, message ) +
+            "\\n-- " + $param( quote, author )
+        );
+    %};
+}
+.cE
+.SS "Preconditions"
+A
+.I precondition
+for an event is arbitrary Java code that determines
+whether conditions are right for an event to be allowed to take place.
+Preconditions have the form:
+.gS
+.TS
+tab(!) ;
+l l .
+precondition:!\f(CW[\fP Java-expression \f(CW]\fP
+!\f(CW%{\fP Java-statement-list \f(CW%}\fP
+.TE
+.gE
+For example:
+.cS
+event mouse( int x, int y ) [ x >= 0 && y >= 0 ];
+.cE
+would discard all \f(CWmouse\f1 events when either coordinate is negative.
+If Java code for a precondition is more complicated than
+a simple expression can easily accommodate,
+then a function can be specified instead:
+.cS
+event login( int pin ) %{
+    if ( pin == atm_card.pin )
+        return true;
+    display( "INCORRECT PIN" );
+    return false;
+%};
+.cE
+Precondition functions must use the Java \f(CWreturn\f1 statement explicitly
+to return a \f(CWboolean\f1 expression.
+In either form,
+an event need not have parameters in order to have a precondition
+(which could test some global data, for example).
+Preconditions are considered methods of the CHSM.
+.SH "STATE NAMES"
+When referring to state names,
+they have the form:
+.gS
+.TS
+tab(!) ;
+l l .
+state-name-ref:!\f3\s+2[\s-2\fPscope-selector\f3\s+2]\s-2\fP identifier-list
+
+scope-selector:!\f(CW::\fP
+!dots
+
+dots:!\f(CW.\fP\f3\s+2[\s-2\fPdots\f3\s+2]\s-2\fP
+
+identifier-list:!identifier \f3\s+2[\s-2\fP\f(CW.\fPidentifier-list\f3\s+2]\s-2\fP
+.TE
+.gE
+In the following CHSM description:
+.cS
+cluster p(q,s) is {
+    cluster q(s) is {
+        state s {
+            alpha -> s;         // goes to q's s
+            gamma -> p.s;       // goes to p's s
+        }
+    }
+    state s;
+}
+.cE
+the reference to state
+.I s
+in the transition on
+.I alpha
+goes to
+.IR q 's
+child-state
+.IR s .
+To go to
+.IR p 's
+child-state
+.IR s ,
+i.e., a non-local state-name,
+the scope of the desired state can be specified.
+There are three ways to do this.
+The most straight-forward way
+is to precede the state name by that of its parent-state's name and a period,
+as was done in the transition on
+.IR gamma .
+.PP
+In the following CHSM description, however:
+.cS
+cluster p(p,s) is {
+    cluster p(q,s) is {
+        cluster q(s) is {
+            state s {
+                alpha -> p.s;   // goes to intermediate p's s
+                gamma -> ::p.s; // goes to outermost p's s
+            }
+        }
+        state s;
+    }
+    state s;
+}
+.cE
+that solution would not work due to the introduction of the new, intermediate
+cluster
+.IR p .
+To go to the outermost
+.IR p 's
+child-state
+.IR s ,
+precede the state name by a double-colon,
+as was done in the transition on
+.IR gamma .
+.PP
+For both examples,
+the second form of referring to state-names could have been used.
+For example:
+.cS
+            gamma -> .s;        // goes to p's s
+.cE
+could have been used in the first example and:
+.cS
+            gamma -> ..s;       // goes to outermost p's s
+.cE
+could have been used in the second
+where each leading period ``backs up'' a scope.
+.PP
+To refer to a state name in global scope,
+it must be fully-qualified:
+.cS
+%%
+chsm my_machine is {
+    cluster c(s) is {
+        state s { /* ... */ }
+    }
+}
+
+%%
+public class Example {
+    public static void main( String args[] ) {
+        my_machine m = new my_machine();
+        // ...
+        if ( m.c.s.active() )   // must use fully-qualified name
+            // ...
+    }
+}
+.cE
+.SH "EVENT NAMES"
+When referring to events, they have the form:
+.gS
+.TS
+tab(!) ;
+l l .
+event-ref:!event-name
+!\f(CWenter(\fPstate-name\f(CW)\fP
+!\f(CWexit(\fPstate-name\f(CW)\fP
+
+event-name:!identifier
+.TE
+.gE
+An
+.I event-name
+is for a user event; the others are for
+.I enter/exit
+events.
+.I Enter/exit
+events are implicitly broadcast upon the entering/exiting
+of states;
+other states can make transitions on these events like just like user events:
+.cS
+enter(s) -> t;
+.cE 0
+.SS "Equality"
+The operators operators \f(CW==\f1 and \f(CW!=\f1
+test whether two events are equal or not.
+For example:
+.cS
+    alpha, beta -> s %{
+        if ( event == alpha )
+            // ...
+    %};
+.cE
+or perhaps:
+.cS
+    gamma, delta, epsilon -> s %{
+        if ( event != gamma )
+            // ...
+    %};
+.cE
+.SH "TRANSITION LISTS"
+Transition lists have the form:
+.gS
+.TS
+tab(!) ;
+l l .
+transition-list:!transition \f3\s+2[\s-2\fPtransition-list\f3\s+2]\s-2\fP
+
+transition:!event-condition-list target-action
+
+event-condition-list:!event-condition \f3\s+2[\s-2\fP\f(CW,\fP event-condition-list\f3\s+2]\s-2\fP
+
+event-condition:!event-ref \f3\s+2[\s-2\fP \f(CW[\fPcondition\f(CW]\fP \f3\s+2]\s-2\fP
+
+condition:!Java-expression
+
+target-action:!\f(CW->\fP target-state \f3\s+2[\s-2\fP \f(CW%{\fP Java-statement-list \f(CW%}\fP \f3\s+2]\s-2\fP
+!\f(CW%{\fP Java-statement-list \f(CW%}\fP
+
+target-state:!state-name-ref
+!\f(CW[\fP target-expression \f(CW]\fP
+
+target-expression:!Java-expression
+.TE
+.gE
+.SS "Conditions"
+A
+.I condition
+is any valid Java \f(CWboolean\fP expression.
+For example:
+.cS
+state s {
+    alpha[ counter == 0 ] -> t;
+}
+.cE
+The transition occurs only if the condition evaluates to true.
+An event in an
+.I event-condition
+without an explicit (user-specified) condition
+has an implicit (default) condition that always evaluates to true.
+.PP
+A transition is taken if any one of the events in an
+.I event-condition-list
+occurs and its condition,
+if any, is true;
+hence the commas can be read as ``or.''
+.SS "Actions"
+An
+.I action
+is a sequence of zero or more valid Java statements
+executed only if the transition occurs.
+For example:
+.cS
+    beta -> t %{ ++counter; %};
+.cE
+Within an action, the variable \f(CWevent\f1 is available
+and is a reference to the event that triggered the transition:
+.cS
+    alpha, beta -> t %{
+        if ( event == alpha )
+            // ...
+    %};
+.cE 0
+.SS "Internal Transitions"
+An
+.I internal-transition
+merely performs a statement-list upon an event;
+no ``transition'' actually takes place.
+For example:
+.cS
+state s {
+    alpha %{            // internal transition
+        // ...
+    %};
+}
+.cE
+says that, on the occurrence of the event
+.I alpha
+(or any event derived from
+.IR alpha ),
+execute the Java code in the following block,
+but do not exit state
+.I s
+nor transition in any way.
+Compare that with the ``self transition'' of:
+.cS
+state s {
+    alpha -> s %{       // self transition
+        // ...
+    %};
+}
+.cE
+that exits
+.IR s ,
+broadcasts
+.IR exit(s) ,
+reenters
+.IR s ,
+broadcasts
+.IR enter(s) ,
+and performs transitions as a result of said broadcasts, if any.
+Internal transitions can be used as an optimization where the full-blown
+mechanics of regular transitions are not needed.
+The term ``internal transition'' is a poor one,
+but it's the term in common use.
+.SS "Dominance"
+When a state has more than one transition with a condition
+(either explicit or implicit)
+that evaluates to true,
+the one declared first
+.IR dominates :
+.cS
+state x {
+    alpha -> y;     // this transition dominates...
+    alpha -> z;     // ...over this one
+}
+.cE
+This is more useful when the first transition has an explicit condition
+so it functions like an ``if-else'':
+.cS
+    alpha[ c ] -> y;    // if ( c == true ) ...
+    alpha -> z;         // else ...
+.cE
+Additionally,
+when a parent- and child-state both have such a transition,
+the parent-state's dominates:
+.cS
+cluster c(x) {
+    alpha -> y;         // this transition dominates...
+} is {
+    state x {
+        alpha -> y;     // ...over this one
+    }
+}
+.cE
+Note that internal transitions will
+.I not
+dominate over others on the same event:
+.cS
+cluster c(x) {
+    alpha %{ /* ... */ %};  // this transition will NOT dominate...
+} is {
+    state x {
+        alpha -> y;         // ...over this one
+    }
+}
+state y;
+.cE
+because the internal transition doesn't really ``transition,''
+hence there is no real transition to dominate.
+.SS "Target Expressions"
+A
+.I target-expression
+is any valid Java expression returning
+\f(CWCHSM.State\fP.
+The value of the expression determines the state to transition to
+at run-time rather than compile-time.
+For example:
+.cS
+state s {
+    alpha -> [ t ];
+}
+state t;
+.cE
+If the expression evaluates to null, the transition is aborted.
+Note that returning a state that results in an illegal transition
+(such as a child state of a set transitioning to a sibling)
+results in undefined behavior.
+.PP
+Within a target-expression, the variable \f(CWevent\f1 is available
+and is a reference to the event that triggered the transition:
+.cS
+    alpha, beta -> [ f( event ) ];
+.cE
+.SH "SPECIAL CONSTRUCTS"
+Within all Java code for
+enter-exit-blocks, preconditions, conditions, and actions,
+the following \f(CW$\f1 constructs can be used:
+.SS "\f(CW${\f2state-name\fP}\f1"
+Refers to the state
+.IR state-name :
+.cS
+chsm my_machine is {
+    cluster c(s,t) is {
+        state<my_state> s {
+            alpha -> t %{
+                ${s}.method();
+            %}
+        }
+        // ...
+    }
+}
+.cE
+If the \f(CW${\f2state-name\fP}\f1 notation were not used,
+the fully-qualified state name would need to be used instead:
+.cS
+                c.s.method();
+.cE
+This notation also permits the scope-resolution operators to be used
+inside of it.
+.SS "\f(CW$enter(\f2state-name\fP)\f1, \f(CW$exit(\f2state-name\fP)\f1"
+Refers to the enter/exit event
+.IR state-name :
+.cS
+        alpha, exit(s) -> t %{
+            if ( event == $exit(s) )
+                // ...
+        %};
+.cE 0
+.SS "\f(CW$in(\fP \f2state-name\fP \f(CW)\fP"
+Returns \f(CWtrue\f1 only if the CHSM is in the state
+.IR state-name :
+.cS
+        alpha[ $in( s ) ] -> t;
+.cE
+The above is equivalent to:
+.cS
+        alpha[ ${s}.active() ] -> t;
+.cE 0
+.SS "\f(CW$param(\fP \f2event-name\fP, \f2param-name\fP \f(CW)\fP"
+Access an event parameter
+.IR param-name :
+.cS
+event say( String message );
+
+state s {
+    say -> t %{
+        System.out.println( $param( say, message ) );
+    %};
+}
+.cE 0
+.SH "THREAD SAFETY"
+The CHSM specification language is ``thread-safe''
+meaning that multiple threads can broadcast events
+to the same machine concurrently.
+.PP
+However, user-specified code in
+enter/exit-blocks,
+event preconditions,
+transition conditions, target expression, and actions
+is not thread-safe unless made so by the user.
+.SH "FILES"
+.PD 0
+.TP 14
+\f2file\f(CW.chsmj\f1
+CHSM/Java source file
+.TP
+\f2file\f(CW.java\f1
+intermediate Java definition file
+.PD
+.SH "SEE ALSO"
+.BR chsmj (1),
+.BR CHSM.Cluster (3),
+.BR CHSM.Event (3),
+.BR CHSM.Machine (3),
+.BR CHSM.Parent (3),
+.BR CHSM.Set (3),
+.BR CHSM.State (3)
+.PP
+David Harel, et al.
+``On the Formal Semantics of Statecharts.''
+.I "Proceedings of the 2nd IEEE Symposium on Logic in Computer Science,"
+IEEE Press, NY, 1987.
+pp. 54-64.
+.PP
+David Harel.
+``Statecharts: A Visual Formalism for Complex Systems.''
+.I "Science of Computer Programming,"
+vol. 8, 1987.
+pp. 231-274.
+.PP
+Paul J. Lucas.
+``An Object-Oriented Language System for
+Implementing Concurrent, Hierarchical, Finite State Machines.''
+.I "M.S. Thesis,"
+University of Illinois at Urbana-Champaign, 1993.
+Technical Report: UIUCDCS-R-94-1868.
+\f(CWhttp://www.pauljlucas.org/resume/thesis.pdf\f1
+.SH "AUTHORS"
+Paul J. Lucas
+.RI < paul@lucasmail.org >
+.br
+Fabio Riccardi
+.RI < fabio.riccardi@mac.com >
+.\" vim:set et sw=4 ts=4:

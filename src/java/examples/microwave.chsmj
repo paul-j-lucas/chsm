@@ -1,0 +1,271 @@
+/*
+**      CHSM Language System
+**      src/java/examples/microwave.chsmj
+**
+**      Copyright (C) 2004-2013  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 2 of the License, or
+**      (at your option) any later version.
+**
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+**
+**      You should have received a copy of the GNU General Public License
+**      along with this program; if not, write to the Free Software
+**      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+/**
+ * A class derived from CHSM.Machine to contain additional information for
+ * MicrowaveOven.
+ */
+class mwData extends CHSM.Machine {
+
+    public mwData() {
+        hour = 12;
+        minute = 0;
+    }
+
+    public void displayTime() {
+        System.out.println( "Time: " + hour + ':' + minute );
+    }
+    public void displayTimer() {
+        System.out.println( "Timer: " + minutes + ':' + seconds );
+    }
+    public boolean okTime() {
+        return hour >= 1 && hour <= 12 && minute <= 59;
+    }
+
+    protected int minutes, seconds;
+    protected int powerLevel;
+    protected int hour, minute;
+    protected int old_hour, old_minute;
+
+    protected static int shiftAdd( int n, int amount ) {
+        if ( (n = n * 10 + amount) >= 100 )
+            n %= 100;
+        return n;
+    }
+}
+
+%%
+
+chsm<mwData> MicrowaveOven is {
+    event Digit( int n );
+
+    set components( mode, display, light ) is {
+
+        /*********************************************************************/
+
+        cluster mode( operational, disabled ) is {
+
+            cluster operational( idle, program, cook, set_time ) history {
+                Open -> disabled;
+            } is {
+
+                //
+                // idle state: wait for somebody to come along
+                //
+                state idle {
+                    Digit -> program;
+                    Minute -> cook %{
+                        minutes = 1;
+                    %};
+                    Clock -> set_time;
+                }
+
+                //
+                // program state: set the timer and power-level
+                //
+                cluster program( setting, power ) history {
+                    upon enter %{
+                        if ( event == Digit ) {
+                            //
+                            // Initialize the minutes/seconds, but only if the
+                            // event was Digit.  (The event could be Close
+                            // because the user opened then closed the door
+                            // that would have exited and then re-entered the
+                            // program state resuming from where we left off.)
+                            //
+                            minutes = 0;
+                            seconds = $param( Digit, n );
+                            powerLevel = 100;
+                        }
+                        displayTimer();
+                    %}
+                    upon exit %{
+                        if ( event != Open )
+                            ${program}.clear();
+                    %}
+
+                    Start -> cook;
+                    Stop  -> idle;
+                } is {
+                    state setting {
+                        Digit %{
+                            minutes = shiftAdd( minutes, seconds/10 );
+                            seconds = shiftAdd( seconds, $param( Digit, n ) );
+                            displayTimer();
+                        %};
+                        Power -> power;
+                    }
+
+                    state power {
+                        //
+                        // Insist on a greater-than-zero power-level.
+                        //
+                        Digit[ $param( Digit, n ) > 0 ] -> setting %{
+                            powerLevel = $param( Digit, n ) * 10;
+                            System.out.println( "Power: " + powerLevel + '%' );
+                        %};
+                    }
+                }
+
+                //
+                // cook state: cook food
+                //
+                state cook {
+                    Done -> idle;
+                    Stop -> program;
+                    Minute %{
+                        ++minutes;
+                        displayTimer();
+                    %};
+                }
+
+                //
+                // set_time state: set the time-of-day clock
+                //
+                cluster set_time( setting, error ) {
+                    upon enter %{
+                        if ( event != Close ) {
+                            old_hour = hour;
+                            old_minute = minute;
+                            hour = minute = 0;
+                        }
+                        displayTime();
+                    %}
+                    upon exit %{
+                        if ( event != Open ) {
+                            if ( !okTime() ) {
+                                hour = old_hour;
+                                minute = old_minute;
+                            }
+                            displayTime();
+                        }
+                    %}
+
+                    Stop -> idle;
+                } is {
+                    state setting {
+                        Digit %{
+                            hour   = shiftAdd( hour, minute/10 );
+                            minute = shiftAdd( minute, $param( Digit, n ) );
+                            displayTime();
+                        %};
+                        Clock[ okTime() ] -> idle;
+                        Clock[!okTime() ] -> error %{
+                            System.out.println( "Time: EE" );
+                        %};
+                    }
+        
+                    state error;
+                }
+            }
+
+            //
+            // disabled state: the door is open
+            //
+            state disabled { Close -> operational; }
+        }
+
+        /*********************************************************************/
+
+        cluster display( time, not_time ) is {
+
+            state time {
+                enter( mode.operational.program ) -> not_time.counter;
+                enter( mode.operational.set_time.error ) -> not_time.error;
+            }
+
+            cluster not_time( counter, power, error ) {
+                enter( mode.operational.idle ) -> time;
+                enter( mode.operational.cook ) -> counter;
+            } is {
+                state counter { Power -> power; }
+                state power { Digit[ $param( Digit, n ) > 0 ] -> counter; }
+                state error;
+            }
+        }
+
+        /*********************************************************************/
+
+        cluster light( off, on ) is {
+            state off { enter( mode.operational.cook ) -> on; }
+            state on  { exit ( mode.operational.cook ) -> off; }
+        }
+    }
+}
+
+%%
+
+public class microwave {
+
+    public static void main( String args[] ) throws java.io.IOException {
+        final MicrowaveOven oven = new MicrowaveOven();
+        oven.debug( CHSM.Machine.D_ALL );
+        oven.enter();
+        oven.dumpState();
+
+        final BufferedReader in =
+            new BufferedReader( new InputStreamReader( System.in ) );
+
+        while ( true ) {
+            //
+            // Simple user-interface just to get events into the machine.
+            //
+            System.out.print( 
+                "\nEnter: 0-9, Cloc(K) (M)inute (P)ower " +
+                "(O)pen (C)lose (S)tart S(T)op (D)one: "
+            );
+            System.out.flush();
+
+            String buf;
+            try {
+                buf = in.readLine();
+            }
+            catch ( IOException e ) {
+                return;
+            }
+            if ( buf == null )
+                return;
+            final char ch = buf.charAt(0);
+
+            if ( Character.isDigit( ch ) )
+                oven.Digit( Character.digit( ch, Character.MAX_RADIX ) );
+            else
+                switch ( Character.toUpperCase( ch ) ) {
+                    case 'K' : oven.Clock();  break;
+                    case 'M' : oven.Minute(); break;
+                    case 'P' : oven.Power();  break;
+                    case 'O' : oven.Open();   break;
+                    case 'C' : oven.Close();  break;
+                    case 'S' : oven.Start();  break;
+                    case 'T' : oven.Stop();   break;
+                    case 'D' : oven.Done();   break;
+                    default: System.err.println( "Invalid input" );
+                }
+
+            oven.dumpState();
+        }
+    }
+}
+// vim:set et sw=4 ts=4 syntax=java:

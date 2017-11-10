@@ -1,0 +1,56 @@
+/*
+**      CHSM Language System
+**      src/java/tests/enter_deep.chsmj
+**
+**      Copyright (C) 2004-2013  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 2 of the License, or
+**      (at your option) any later version.
+** 
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+** 
+**      You should have received a copy of the GNU General Public License
+**      along with this program; if not, write to the Free Software
+**      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
+
+%%
+
+// Tests that entering a state nested deeply in a cluster directly really
+// enters that state.
+
+chsm<Test> enterDeep_chsm is {
+    state a {
+        alpha -> x.y.c;
+    }
+    cluster x(a,y) is {
+        state a;
+        cluster y(b,c) is {
+            state b;
+            state c;
+        }
+    }
+}
+
+%%
+
+class enter_deep {
+    public static void main( String args[]) {
+        enterDeep_chsm m = new enterDeep_chsm();
+        m.enter();
+        m.alpha();
+
+        if ( !( m.active() &&
+            !m.a.active() && m.x.active() && m.x.y.active() && m.x.y.c.active()
+        ) )
+            Test.exitCode = 1;
+
+        Test.printResult();
+    }
+}
+// vim:set et sw=4 ts=4 syntax=java:

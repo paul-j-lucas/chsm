@@ -1,0 +1,81 @@
+/*
+**      CHSM Language System
+**      src/java/tests/precondition.chsmj
+**
+**      Copyright (C) 2004-2013  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 2 of the License, or
+**      (at your option) any later version.
+** 
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+** 
+**      You should have received a copy of the GNU General Public License
+**      along with this program; if not, write to the Free Software
+**      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
+
+class Global {
+    static int g;
+}
+
+%%
+
+// Tests preconditions.
+
+chsm<Test> precondition_chsm is {
+    event A;
+    event B             [ Global.g > 0 ];
+
+    event<A> C          [ Global.g > 0 ];
+    event<A> D( int w ) [ w > 0 ];
+
+    event<B> E;
+    event<B> F( int x ) [ x > 0 ];
+
+    event<E> G;
+    event<E> H( int y ) [ y > 0 ];
+
+    event<F> I;
+    event<F> J( int z ) %{ return z > 0; %};
+
+    state a { B -> b; }
+    state b { I, J -> c; }
+    state c;
+}
+
+%%
+
+class precondition {
+    public static void main( String args[] ) {
+        precondition_chsm m = new precondition_chsm();
+        m.enter();
+
+        block: {
+            Global.g = 0; m.B();
+            if ( m.b.active() )
+                break block;
+
+            Global.g = 1; m.B();
+            if ( !m.b.active() )
+                break block;
+
+            m.I( 0 );
+            if ( m.c.active() )
+                break block;
+
+            m.J( 1, 1 );
+            if ( !m.c.active() )
+                break block;
+
+            Test.exitCode = 0;
+        }
+
+        Test.printResult();
+    }
+}
+// vim:set et sw=4 ts=4 syntax=java:

@@ -1,0 +1,195 @@
+.\"
+.\"     CHSM Language System
+.\"     CHSM::machine.3 -- machine class manual page
+.\"
+.\"     Copyright (C) 1996-2013  Paul J. Lucas & Fabio Riccardi
+.\"
+.\"     This program is free software; you can redistribute it and/or modify
+.\"     it under the terms of the GNU General Public License as published by
+.\"     the Free Software Foundation; either version 2 of the License, or
+.\"     (at your option) any later version.
+.\" 
+.\"     This program is distributed in the hope that it will be useful,
+.\"     but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"     GNU General Public License for more details.
+.\" 
+.\"     You should have received a copy of the GNU General Public License
+.\"     along with this program; if not, write to the Free Software
+.\"     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.TH \f3CHSM::machine\f1 3 "January 21, 2010" "CHSM" "CHSM Language System"
+.SH NAME
+machine \- CHSM machine class
+.SH SYNOPSIS
+.ft CW
+.nf
+#define CHSM_MACHINE_ARGS   /* ... */
+#define CHSM_MACHINE_INIT   /* ... */
+
+namespace Concurrent_Hierarchical_State_Machine {
+
+    class machine {
+    public:
+        typedef state value_type;
+        typedef value_type const* const_pointer;
+        typedef value_type const& const_reference;
+
+        virtual ~machine();
+
+        bool         active() const;
+        virtual bool enter( event const &trigger = prime_ );
+        virtual bool exit ( event const &trigger = prime_ );
+
+        class const_iterator {
+        public:
+            const_iterator();
+
+            const_reference operator* () const;
+            const_pointer   operator\->() const;
+
+            const_iterator& operator++();
+            const_iterator  operator++(int);
+
+            friend bool
+            operator==( const_iterator const&, const_iterator const& );
+            friend bool
+            operator!=( const_iterator const&, const_iterator const& );
+        };
+        const_iterator begin() const;
+        const_iterator end() const;
+
+        enum {
+            D_none  = 0x00,
+            D_enex  = 0x01,
+            D_event = 0x02,
+            D_alg   = 0x04,
+            D_all   = D_enex | D_event | D_alg
+        };
+
+        unsigned debug() const;
+        unsigned debug( unsigned );
+
+        void dump_state() const;
+    protected:
+        machine( CHSM_MACHINE_ARGS );
+    };
+
+}
+.fi
+.ft 1
+.SH DESCRIPTION
+The \f(CWmachine\f1 class is the base class for user-specified CHSMs.
+.SS "Functions"
+.IP "\f(CWvirtual bool enter( event const &trigger = prime_ )\f1"
+.IP "\f(CWvirtual bool exit ( event const &trigger = prime_ )\f1"
+Returns \f(CWtrue\f1 only if the state was actually entered or exited,
+respectively.
+The \f(CWtrigger\f1 is a reference to the event that is causing the state
+to be entered or exited.
+By default,
+it is an implementation-supplied, transitionless event
+used solely for this purpose.
+These functions can be overridden in a derived class to alter
+the behavior of entrances and exits.
+.IP "\f(CWbool active() const\f1"
+Returns \f(CWtrue\f1 only if the \f(CWroot\f1 cluster,
+and thus the CHSM as a whole,
+is currently active.
+(See
+.BR chsm-c++ (4).)
+.SS "Debugging Functions"
+.IP "\f(CWunsigned debug() const\f1"
+Returns the current debugging state as an unsigned integer
+comprised of the bitwise or of the debugging states.
+.IP "\f(CWunsigned debug( unsigned )\f1"
+Sets the current debugging state as specified by the argument
+comprised of the bitwise or of the debugging states.
+Debugging output goes to standard error.
+Returns the previous debugging state.
+The debugging states are:
+.RS 10
+.TP 10
+\f(CWD_none\f1
+None.
+.TP
+\f(CWD_enex\f1
+Reports state entrances and exits.
+.TP
+\f(CWD_event\f1
+Reports event queuing and dequeuing.
+.TP
+\f(CWD_alg\f1
+Reports progress during the event-broadcast algorithm.
+.TP
+\f(CWD_all\f1
+Reports all debugging information.
+.RE
+.IP "\f(CWvoid dump_state() const\f1"
+Dumps a printout of the current state to standard error
+that consists of each state's name, one per line, preceded by an asterisk
+only if it is active; a space otherwise.
+.SS "Iterators"
+The \f(CWconst_iterator\f1 class is an iterator over the machine's states.
+It is in STL style.
+There is no (non-\f(CWconst\f1) \f(CWiterator\f1 since the only thing that
+should affect a state's state are events causing transitions.
+The \f(CWmachine\f1 member functions \f(CWbegin()\f1 and \f(CWend()\f1
+are used to return \f(CWconst_iterator\f1s.
+.SS "Derived Classes"
+The \f(CWmachine\f1 class can be derived from
+to add additional data members and members functions to a CHSM.
+The macros \f(CWCHSM_MACHINE_ARGS\f1 and \f(CWCHSM_MACHINE_INIT\f1
+are used in the derived class's constructor
+and shield the user from the ugly arguments lists
+used in the CHSM implementation.
+.PP
+Additional, trailing constructor arguments may be specified.
+Such arguments must be repeated in the \f2parameter-list\f1
+in the \f(CWchsm\f1 specification.
+.SH EXAMPLE
+.ft CW
+.nf
+#include <chsm.h>
+
+class my_stuff : public CHSM::machine {
+public:
+    my_stuff( CHSM_MACHINE_ARGS, int arg ) :
+        CHSM::machine( CHSM_MACHINE_INIT ), mbr( arg ) { }
+protected:              // make accessible to derived class
+    int mbr;
+};
+
+%%
+chsm<my_stuff> my_machine( int arg ) is {
+    state s {
+        alpha -> t %{
+            mbr = 0;    // note: it's accessible
+        %};
+    }
+    // ...
+}
+
+%%
+int main() {
+    my_machine m( 42 ); // pass only additional argument(s)
+}
+.fi
+.ft 1
+.SH NOTES
+All lines of debugging output are preceded by the \f(CW|\f1 character
+to make them easily distinguishable.
+.SH SEE ALSO
+.BR CHSM::cluster (3),
+.BR CHSM::parent (3),
+.BR CHSM::set (3),
+.BR CHSM::state (3),
+.BR chsm-c++ (4),
+.BR iterator (STL)
+.SH AUTHORS
+Paul J. Lucas
+.RI < paul@lucasmail.org >
+.br
+Fabio Riccardi
+.RI < fabio.riccardi@mac.com >
+.\" vim:set et sw=4 ts=4:

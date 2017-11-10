@@ -1,0 +1,231 @@
+.\"
+.\"     CHSM Language System
+.\"     chsmc.1 -- CHSM-to-C++ compiler driver script manual page
+.\"
+.\"     Copyright (C) 1996-2013  Paul J. Lucas & Fabio Riccardi
+.\"
+.\"     This program is free software; you can redistribute it and/or modify
+.\"     it under the terms of the GNU General Public License as published by
+.\"     the Free Software Foundation; either version 2 of the License, or
+.\"     (at your option) any later version.
+.\"     
+.\"     This program is distributed in the hope that it will be useful,
+.\"     but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"     GNU General Public License for more details.
+.\"     
+.\"     You should have received a copy of the GNU General Public License
+.\"     along with this program; if not, write to the Free Software
+.\"     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.TH \f3chsmc\f1 1 "January 21, 2010" "CHSM" "CHSM Language System"
+.SH NAME
+chsmc \- CHSM-to-C++ compiler driver script
+.SH SYNOPSIS
+.B chsmc
+[
+.I options
+]
+.I source-file
+.SH DESCRIPTION
+.B chsmc
+is the front-end to the
+Concurrent Hierarchical Finite State Machine compiler for C++.
+The command uses 
+.BR chsm2c++ (1)
+for syntax checking, type checking, intermediate C++ code generation
+and a C++ compiler for code generation.
+.PP
+When produced, an executable file has the name \f(CWa.out\f1 unless the 
+.B \-o
+option is used.
+.PP
+For the CHSM source file, \f2source\f(CW.chsmc\f1,
+.B chsmc
+creates two temporary files,
+\f2source\f(CW.h\f1 and \f2source\f(CW.c\f1,
+containing the generated C++ code in the current directory for subsequent
+compilation with a C++ compiler.
+The
+.B \-k
+(keep) option preserves the files.
+.SH OPTIONS
+Options begin with a `\f(CW-\f1' for short options.
+In addition to the options described below,
+.B chsmc
+accepts other options via the
+.B \-O
+option and passes them on to the C++ compilation system tools.
+See
+.BR cpp (1)
+for preprocessor options,
+your C++ compiler manual page for C++ compiler options,
+.BR ld (1)
+for link editor options, and
+.BR as (1)
+for assembler options.
+.PP
+Unlike some other compilation tools, options supplied to
+.B chsmc
+are
+.IR position-independent .
+The following options apply to the CHSM-specific parts of the compilation
+process:
+.TP 14
+.B \-c
+Passed to the C++ compiler to suppress linking with
+.BR ld (1)
+and just produce a \f(CW.o\f1 file.
+This option renders the 
+.B \-l
+and
+.B \-L
+options useless.
+.TP
+\f3\-D\f2name\f1[\f2=def\f1]
+Passed to the C++ compiler to define a symbol name for
+.BR cpp (1).
+.TP
+.B \-E
+Run only
+.BR chsm2c++ (1)
+on the CHSM source file and send the result to standard output.
+.TP
+.B \-g
+Passed to the C++ compiler to produce additional symbol-table information
+used for C++ source debuggers.
+.TP
+.B \-k
+Leaves the intermediate C++ files in the current directory after the
+compilation process.
+.TP
+.BI \-I directory
+Passed to the C++ compiler to add
+.I directory
+to the list of directories in which to search for \f(CW#include\f1 files for
+.BR cpp (1).
+.TP
+.BI \-l library
+Passed to the C++ compiler to link the resultant C++ object code
+with the library
+.IR library .
+.TP
+.BI \-L directory
+Passed to the C++ compiler to add
+.I directory
+to the list or directories in which to search for libraries for linking using
+.BR ld (1).
+.TP
+.B \-n
+No-execute mode.
+Parse the command-line, but do not execute any commands.
+.TP
+.B \-o
+Passed to the C++ compiler to set the executable output file name.
+.TP
+\f3\-O\f1``,\f2other\f1''
+Pass the comma-separated argument string
+.RI `` other ''
+to the C++ compiler to allow implementation-dependent options to be specified.
+Note the requirement of the initial comma.
+.TP
+.B \-P
+Passed to
+.BR chsm2c++ (1)
+to suppress \f(CW#line\f1 directives in the intermediate C++ files.
+.TP
+.B \-v
+Print the version number of
+.BR chsm2c++ (1)
+and exit.
+.TP
+.B \-V
+Print command-lines for
+.BR chsm2c++ (1)
+and/or the C++ compiler prior to execution.
+.SH FILES
+.PD 0
+.TP 14
+\f2file\f1\f(CW.chsmc\f1
+chsm-C++ source file
+.TP
+\f2file\f1\f(CW.h\f1
+intermediate C++ declaration file
+.TP
+\f2file\f1\f(CW.c\f1
+intermediate C++ definition file
+.TP
+\f2file\f1\f(CW.o\f1
+object file
+.TP
+\f(CWa.out\f1
+default executable output file name
+.TP
+.B chsmc
+CHSM driver shell script
+.TP
+.B chsm2c++
+CHSM compiler
+.TP
+\f(CWlibchsm.a\f1
+CHSM run-time library
+.PD
+.SH ENVIRONMENT
+The following environment variables are set within the
+.B chsmc
+driver script,
+but can be set in the environment to override various settings:
+.TP 14
+\f(CWCC\f1
+The C++ compiler.
+.TP
+\f(CWCCFLAGS\f1
+C++ compiler flags.
+.TP
+\f(CWCCHEXT\f1
+Intermediate C++ declaration file name extension.
+.TP
+\f(CWCCCEXT\f1
+Intermediate C++ definition file name extension.
+.TP
+\f(CWCHSM2CXX\f1
+The CHSM-to-C++ compiler
+.BR chsm2c++ (1).
+.TP
+\f(CWCHSM2CXX_FLAGS\f1
+CHSM-to-C++ compiler flags.
+.TP
+\f(CWCHSM_I\f1
+Auto-specified
+.B \-I
+directive(s).
+Must specify at least where the CHSM include file (\f(CWchsm.h\f1) is.
+.TP
+\f(CWCHSM_L\f1
+Auto-specified
+.B \-L
+directive(s).
+Must specify at least where the CHSM library file (\f(CWlibchsm.a\f1) is.
+.TP
+\f(CWCHSM_l\f1
+Auto-specified
+.B -l
+directive(s).
+Must specify at least the CHSM library file (\f(CWlibchsm.a\f1).
+.SH SEE ALSO
+.BR chsm2c++ (1),
+.BR cpp (1),
+.BR as (1),
+.BR ld (1),
+.BR chsm-c++ (4)
+.SH DIAGNOSTICS
+The diagnostics produced by
+.B chsmc
+itself are intended to be self-explanatory.
+.SH AUTHORS
+Paul J. Lucas
+.RI < paul@lucasmail.org >
+.br
+Fabio Riccardi
+.RI < fabio.riccardi@mac.com >
+.\" vim:set et sw=4 ts=4:

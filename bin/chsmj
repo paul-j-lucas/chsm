@@ -1,0 +1,130 @@
+#! /bin/sh
+##
+#     CHSM Language System
+#     chsmc -- CHSM-to-Java compiler driver script
+#
+#     Copyright (C) 1996-2013  Paul J. Lucas & Fabio Riccardi
+#
+#     This program is free software; you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation; either version 2 of the License, or
+#     (at your option) any later version.
+#     
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#     
+#     You should have received a copy of the GNU General Public License
+#     along with this program; if not, write to the Free Software
+#     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+##
+#   This code is Bourne Shell for maximal portability.
+##
+
+###############################################################################
+#
+#   Environment
+#
+###############################################################################
+
+# Java compiler.
+JAVAC=${JAVAC:-"javac"}
+
+# Java compiler classpath option; usually "-classpath".
+JAVA_CLASSPATH_OPT=${JAVA_CLASSPATH_OPT:-"-classpath"}
+
+# Java compiler sourcepath option; usually "-sourcepath".
+JAVAC_SOURCEPATH_OPT=${JAVAC_SOURCEPATH_OPT:-"-sourcepath"}
+
+# Additional Java compiler flags.
+JAVAC_FLAGS=${JAVAC_FLAGS-""}
+
+# CHSM-to-Java compiler.
+CHSM2JAVA=${CHSM2JAVA:-"chsm2java"}
+
+# CHSM-to-Java compiler flags.
+CHSM2JAVA_FLAGS=${CHSM2JAVA_FLAGS-""}
+
+# The location of the chsm.jar file.
+CHSM_JAR=${CHSM_JAR:-"/usr/local/lib/chsm.jar"}
+
+########### You shouldn't have to change anything below this line. ###########
+
+ME=$0; ME=`expr $ME : '.*/\(.*\)'`
+
+JAVAC_classpath_opt="$JAVA_CLASSPATH_OPT $CHSM_JAR"
+
+usage()
+{
+  cat >&2 <<!
+usage: $ME [-EgknvV] [-cpath]... [-spath]... [-O\",other\"] file.chsmj
+!
+}
+
+###############################################################################
+#
+#   Process command-line options
+#
+###############################################################################
+
+while getopts c:Egkno:O:s:vV opt
+do
+  case $opt in
+  c) JAVAC_classpath_opt="$JAVA_CLASSPATH_OPT $OPTARG" ;;
+  E) to_stdout_opt=true keep_files_opt=true ;;
+  g) JAVAC_g_opt=-g ;;
+  k) keep_files_opt=true ;;
+  n) dry_run_opt=true ;;
+  O) JAVAC_other="$JAVAC_other $OPTARG" ;;
+  s) JAVAC_sourcepath_opt="$JAVAC_SOURCEPATH_OPT $OPTARG" ;;
+  v) $CHSM2JAVA -v; exit 0 ;;
+  V) verbose_opt=true ;;
+  ?) usage; exit 1 ;;
+  esac
+done
+shift `expr $OPTIND - 1`
+[ $# -ne 1 ] && { usage; exit 1; }
+
+###############################################################################
+#
+#   Set up files
+#
+###############################################################################
+
+CHSMJ_FILE=$1
+STRIP=`expr $CHSMJ_FILE : '\(..*\)\...*'`
+JAVA_FILE=$STRIP.java
+
+##### Trap to remove intermediate Java files
+[ "$keep_files_opt" = "" -a "$dry_run_opt" = "" ] &&
+  trap 'x=$?; rm -f $JAVA_FILE; exit $x' 0 1 2 15
+
+###############################################################################
+#
+#   Go!
+#
+###############################################################################
+
+##### If going to stdout, just run through CHSM-to-Java compiler
+COMMON="$CHSM2JAVA $CHSM2JAVA_FLAGS"
+if [ "$to_stdout_opt" != "" ]
+then
+  CMD="$COMMON -E $CHSMJ_FILE"
+  [ "$verbose_opt" != "" ] && echo $CMD
+  [ "$dry_run_opt" = "" ] && $CMD
+  exit $?
+else
+  CMD="$COMMON $CHSMJ_FILE $JAVA_FILE"
+  [ "$verbose_opt" != "" ] && echo $CMD
+  [ "$dry_run_opt" = "" ] && { $CMD || exit $?; }
+fi
+
+##### Run through Java compiler
+CMD="$JAVAC $JAVAC_FLAGS $JAVAC_classpath_opt $JAVAC_sourcepath_opt $JAVAC_g_opt $JAVAC_other $JAVA_FILE"
+[ "$verbose_opt" != "" ] && echo $CMD
+[ "$dry_run_opt" = "" ] && $CMD
+
+# vim:set et sw=2 ts=2 syntax=sh:

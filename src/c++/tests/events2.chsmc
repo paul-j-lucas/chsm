@@ -1,0 +1,99 @@
+/*
+**      CHSM Language System
+**      src/c++/tests/events2.chsmc
+**
+**      Copyright (C) 1996-2013  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 2 of the License, or
+**      (at your option) any later version.
+** 
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+** 
+**      You should have received a copy of the GNU General Public License
+**      along with this program; if not, write to the Free Software
+**      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
+
+#include <iostream>
+using namespace std;
+
+int exit_code = 0;
+
+int const alpha_value   = 42;
+int const beta_value    = 11;
+
+%%
+
+// Tests that base/derived parameter blocks do not interfere.
+
+chsm my_machine is {
+    event alpha( int value );
+    event<alpha> beta;
+
+    set s(p,q) is {
+        cluster p(a,b) is {
+            state a {
+                alpha -> b %{
+                    beta( beta_value );
+                    //
+                    // Check that the broadcast of beta did not overwrite
+                    // alpha's value.
+                    //
+                    if ( alpha->value != alpha_value )
+                        exit_code = 2;
+                %};
+            }
+            state b;
+        }
+        cluster q(a,b) is {
+            state a {
+                beta -> b %{
+                    //
+                    // Check that beta's value really was set.
+                    //
+                    if ( beta->value != beta_value )
+                        exit_code = 3;
+                    //
+                    // Now alpha's value should equal beta's value.
+                    //
+                    if ( alpha->value != beta_value )
+                        exit_code = 4;
+                %};
+            }
+            state b;
+        }
+    }
+}
+
+%%
+
+int main() {
+    my_machine m;
+    m.enter();
+
+#ifdef DEBUG
+    m.debug( CHSM::machine::D_all );
+#endif
+
+    m.alpha( alpha_value );
+
+#ifdef DEBUG
+    m.dump_state();
+#endif
+
+    if ( !( m.active() &&
+        m.s.active() &&
+        m.s.p.active() && !m.s.p.a.active() && m.s.p.b.active() &&
+        m.s.q.active() && !m.s.q.a.active() && m.s.q.b.active()
+    ) )
+        exit_code = 1;
+
+    cout << (exit_code ? "INCORRECT" : "correct") << endl;
+    return exit_code;
+}
+// vim:set et sw=4 ts=4 syntax=cpp:

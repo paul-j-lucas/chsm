@@ -1,0 +1,158 @@
+.\"
+.\"	    CHSM Language System
+.\"	    chsmj.1 -- CHSM-to-Java compiler driver script manual page
+.\"
+.\"	    Copyright (C) 2004-2013  Paul J. Lucas & Fabio Riccardi
+.\"
+.\"	    This program is free software; you can redistribute it and/or modify
+.\"	    it under the terms of the GNU General Public License as published by
+.\"	    the Free Software Foundation; either version 2 of the License, or
+.\"	    (at your option) any later version.
+.\"     
+.\"	    This program is distributed in the hope that it will be useful,
+.\"	    but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"	    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"	    GNU General Public License for more details.
+.\"     
+.\"	    You should have received a copy of the GNU General Public License
+.\"	    along with this program; if not, write to the Free Software
+.\"	    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.TH \f3chsmj\f1 1 "January 21, 2010" "CHSM" "CHSM Language System"
+.SH NAME
+chsmj \- CHSM-to-Java compiler driver script
+.SH SYNOPSIS
+.B chsmj
+[
+.I options
+]
+.I source-file
+.SH DESCRIPTION
+.B chsmj
+is the front-end to the
+Concurrent Hierarchical Finite State Machine compiler for Java.
+The command uses 
+.BR chsm2java (1)
+for syntax checking, type checking, intermediate Java code generation
+and a Java compiler for code generation.
+.PP
+For the CHSM source file, \f2source\f(CW.chsmj\f1,
+.B chsmj
+creates a temporary file,
+\f2source\f(CW.java\f1,
+containing the generated Java code in the current directory for subsequent
+compilation with a Java compiler.
+The
+.B \-k
+(keep) option preserves the file.
+.SH OPTIONS
+Options begin with a `\f(CW-\f1' for short options.
+In addition to the options described below,
+.B chsmj
+accepts other options via the
+.B \-O
+option and passes them on to the Java compilation system tools.
+See your Java compiler manual page for Java compiler options.
+.PP
+The following options apply to the CHSM-specific parts of the compilation
+process:
+.TP 14
+.B \-c
+Passed to the Java compiler to specify a class-path.
+.TP
+.B \-E
+Run only
+.BR chsm2java (1)
+on the CHSM source file and send the result to standard output.
+.TP
+.B \-g
+Passed to the Java compiler to produce additional debugging information.
+.TP
+.B \-k
+Leaves the intermediate Java files in the current directory after the
+compilation process.
+.TP
+.B \-n
+No-execute mode.
+Parse the command-line, but do not execute any commands.
+.TP
+\f3\-O\f1``,\f2other\f1''
+Pass the comma-separated argument string
+.RI `` other ''
+to the Java compiler to allow implementation-dependent options to be specified.
+Note the requirement of the initial comma.
+.TP
+.B \-s
+Passed to the Java compiler to specify a source-path.
+.TP
+.B \-v
+Print the version number of
+.BR chsm2java (1)
+and exit.
+.TP
+.B \-V
+Print command-lines for
+.BR chsm2java (1)
+and/or the Java compiler prior to execution.
+.SH FILES
+.PD 0
+.TP 14
+\f2file\f1\f(CW.chsmj\f1
+chsm-Java source file
+.TP
+\f2file\f1\f(CW.java\f1
+intermediate Java definition file
+.TP
+\f2file\f1\f(CW.class\f1
+class file
+.TP
+.B chsmj
+CHSM-to-Java driver shell script
+.TP
+.B chsm2java
+CHSM-to-Java compiler
+.TP
+\f(CWchsm.jar\f1
+CHSM run-time library
+.PD
+.SH ENVIRONMENT
+The following environment variables are set within the
+.B chsmj
+driver script,
+but can be set in the environment to override various settings:
+.TP 14
+\f(CWJAVAC\f1
+The Java compiler.
+.TP
+\f(CWJAVA_CLASSPATH_OPT\f1
+The option used to specify a class-path to the Java compiler.
+.TP
+\f(CWJAVAC_SOURCEPATH_OPT\f1
+The option used to specify a source-path to the Java compiler.
+.TP
+\f(CWJAVAC_FLAGS\f1
+Additional flags for the Java compiler.
+.TP
+\f(CWCHSM2JAVA\f1
+The CHSM-to-Java compiler.
+.TP
+\f(CWCHSM2JAVA_FLAGS\f1
+CHSM-to-Java compiler flags.
+.TP
+\f(CWCHSM_JAR\f1
+The location of the CHSM jar file (\f(CWchsm.jar\f1).
+.SH SEE ALSO
+.BR chsm2java (1),
+.BR javac (1),
+.BR chsm-java (4)
+.SH DIAGNOSTICS
+The diagnostics produced by
+.B chsmj
+itself are intended to be self-explanatory.
+.SH AUTHORS
+Paul J. Lucas
+.RI < paul@lucasmail.org >
+.br
+Fabio Riccardi
+.RI < fabio.riccardi@mac.com >
+.\" vim:set et sw=4 ts=4:

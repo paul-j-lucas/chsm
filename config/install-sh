@@ -1,0 +1,149 @@
+#! /bin/sh
+##
+#     install-sh
+#
+#     Copyright (C) 2000-2013  Paul J. Lucas
+#
+#     This program is free software; you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation; either version 2 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program; if not, write to the Free Software
+#     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+##
+
+CP=cp
+CHOWN=chown
+CHGRP=chgrp
+CHMOD=chmod
+MKDIR=mkdir
+
+# uncomment the next line to test script
+#ECHO=echo
+
+########## You shouldn't have to change anything below this line. #############
+
+ME=`basename $0`
+
+usage() {
+  echo "usage: $ME [-o owner] [-g group] [-m mode] file ... dir" >&2
+  echo "       $ME [-o owner] [-g group] [-m mode] -d dir" >&2
+}
+
+###############################################################################
+#
+#   Process command-line options
+#
+#   We don't rely on getopt because it varies and/or is broken on some systems.
+#
+###############################################################################
+
+while [ -n "$1" ]
+do
+  if [ -z "$A" ]
+  then
+    case $1 in
+
+    -d*)  if [ x"$1" = x-d ]
+          then A=$1
+          else dir=`expr $1 : '-d\(.*\)'`
+          fi
+          ;;
+
+    -g*)  if [ x"$1" = x-g ]
+          then A=$1
+          else group=`expr $1 : '-g\(.*\)'`
+          fi
+          ;;
+
+    -m*)  if [ x"$1" = x-m ]
+          then A=$1
+          else mode=`expr $1 : '-m\(.*\)'`
+          fi
+          ;;
+
+    -o*)  if [ x"$1" = x-o ]
+          then A=$1
+          else owner=`expr $1 : '-o\(.*\)'`
+          fi
+          ;;
+
+    -*)   echo "$ME: illegal option: $1" >&2
+          usage; exit 1
+          ;;
+
+    *)    if [ -z "$src" ]
+          then src=$1
+          else src="$src $dst"; dst=$1
+          fi
+          ;;
+    esac
+  else
+    ##### options that have an argument
+    case $1 in
+    -*) break ;;
+    esac
+    case $A in
+    -d) dir=$1 ;;
+    -g) group=$1 ;;
+    -m) mode=$1 ;;
+    -o) owner=$1 ;;
+    esac
+    unset A
+  fi
+  shift
+done
+
+[ -n "$A" ] && {
+  echo "$ME: $A requires an argument" >&2
+  usage; exit 2
+}
+
+###############################################################################
+#
+#   Go!
+#
+###############################################################################
+
+change() {
+  [ -n "$owner" ] && $ECHO $CHOWN $owner $* 2>/dev/null
+  [ -n "$group" ] && $ECHO $CHGRP $group $* 2>/dev/null
+  [ -n "$mode"  ] && $ECHO $CHMOD $mode  $* 2>/dev/null
+}
+
+if [ -n "$dir" ]
+then
+  # don't rely on mkdir -p being available
+  echo $dir | tr '/' '\012' | while read subdir
+  do
+    [ -z "$subdir" ] && subdir=/
+    if [ -z "$path" ]
+    then path=$subdir
+    elif [ "$path" = / ]
+    then path="/$subdir"
+    else path="$path/$subdir"
+    fi
+    [ -d "$path" ] || { $ECHO $MKDIR $path; change $path; }
+  done
+else
+  [ -z "$src" ] && {
+    echo "$ME: no source file(s) specified" >&2
+    usage; exit 3
+  }
+  [ -z "$dst" ] && {
+    echo "$ME: no destination directory specified" >&2
+    usage; exit 4
+  }
+  $ECHO $CP $src $dst
+  $ECHO cd $dst
+  change `echo $src | xargs -n1 basename`
+fi
+
+# vim:set et sw=2 ts=2:

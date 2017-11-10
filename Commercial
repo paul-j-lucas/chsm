@@ -1,0 +1,111 @@
+CHSM GENERAL COMMERCIAL LICENSE
+Version 5, August 2007
+
+Copyright (C) 2005-2013 Paul J. Lucas
+
+Everyone is permitted to copy and distribute verbatim copies of this license
+document, but changing it is not allowed.
+
+
+  1. License.  Subject to the terms of this License, Paul J. Lucas ("Licensor")
+hereby grants you ("Licensee") a limited, non-exclusive right to use, copy,
+modify, create derivative works, sublicense, and distribute the Concurrent
+Hierarchical State Machine software ("CHSM").
+
+This License is only for version _______ of CHSM and all subsequent versions
+that are made publicly available within one year from the date this License is
+entered into by the parties.
+
+You may use this version of this License or, at your option, any later version.
+
+  2. Permitted Uses and Restrictions.  This License allows you to incorporate
+CHSM into software developed by you ("your software") as follows:
+
+	a) You may make modifications to CHSM source code and may keep
+	   those modifications proprietary.
+
+	b) You may use CHSM in any way, in whole or in part, with or
+	   without modifications, as part of your software.
+
+	c) Your software may not in any way enable a user to design,
+	   specify, construct, modify, or simulate any form of finite
+	   state automata.
+
+	d) You may distribute CHSM, in whole or in part, with or
+	   without modifications, in binary form, by any means, with
+	   your software.
+
+	e) You may license your software, which may include CHSM, in
+	   whole or in part, with or without modifications, in binary
+	   form, under its own license so long as it does not conflict
+	   with this license.
+
+	f) You may distribute CHSM in its entirety, or your
+	   modifications, or both, by any means, in source form;
+	   however, CHSM or your modifications so distributed shall be
+	   under the terms of the GNU General Public License.
+
+	g) All copyright notices displayed by or in documentation for
+	   your software must include the following notice:
+
+		CHSM (C) 1996-2013 Paul J. Lucas.  All rights reserved.
+
+	   You may translate the above notice into another language or
+	   to adhere to local legal requirements where displayed.
+
+	h) You may offer warranty protection for your software that may
+	   include CHSM, in whole or in part, with or without
+	   modifications.
+
+You may not use, copy, modify, sublicense, or distribute CHSM except as
+expressly provided under this License.  Any attempt otherwise to use, copy,
+modify, sublicense, or distribute CHSM is void, and will automatically
+terminate your rights under this License.
+
+  3. Disclaimer of Warranty.  You expressly acknowledge and agree that use of
+CHSM is at your sole risk.  CHSM is provided "AS IS" and without warranty of
+any kind and Licensor EXPRESSLY DISCLAIMS ALL WARRANTIES AND/OR CONDITIONS,
+EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+AND/OR CONDITIONS OF MERCHANTABILITY OR SATISFACTORY QUALITY AND FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS.  LICENSOR DOES
+NOT WARRANT THAT THE FUNCTIONS CONTAINED IN CHSM WILL MEET YOUR REQUIREMENTS,
+OR THAT THE OPERATION OF CHSM WILL BE UNINTERRUPTED OR ERROR-FREE, OR THAT
+DEFECTS IN CHSM WILL BE CORRECTED.  FURTHERMORE, LICENSOR DOES NOT WARRANT OR
+MAKE ANY REPRESENTATIONS REGARDING THE USE OR THE RESULTS OF THE USE OF CHSM OR
+RELATED DOCUMENTATION IN TERMS OF THEIR CORRECTNESS, ACCURACY, RELIABILITY, OR
+OTHERWISE.  NO ORAL OR WRITTEN INFORMATION OR ADVICE GIVEN BY LICENSOR SHALL
+CREATE A WARRANTY OR IN ANY WAY INCREASE THE SCOPE OF THIS WARRANTY.  SOME
+JURISDICTIONS DO NOT ALLOW THE EXCLUSION OF IMPLIED WARRANTIES, SO THE ABOVE
+EXCLUSION MAY NOT APPLY TO YOU.
+
+  4. Limitation of Liability.  UNDER NO CIRCUMSTANCES, INCLUDING NEGLIGENCE,
+SHALL LICENSOR BE LIABLE FOR ANY INCIDENTAL, SPECIAL, INDIRECT OR CONSEQUENTIAL
+DAMAGES ARISING OUT OF OR RELATING TO THIS LICENSE.  SOME JURISDICTIONS DO NOT
+ALLOW THE LIMITATION OF INCIDENTAL OR CONSEQUENTIAL DAMAGES SO THIS LIMITATION
+MAY NOT APPLY TO YOU. In no event shall Licensor's total liability to you for
+all damages exceed the amount you paid for the right to use this License.
+
+  5. Controlling Law and Severability.  This License shall be governed by the
+laws of the United States and the State of California.  If for any reason a
+court of competent jurisdiction finds any provision, or portion thereof, to be
+unenforceable, the remainder of this License shall continue in full force and
+effect.
+
+  6. Complete Agreement.  This License constitutes the entire agreement between
+the parties with respect to the use of CHSM and supersedes all prior or
+contemporaneous understandings regarding such subject matter.  No amendment to
+or modification of this License will be binding unless in writing and signed by
+Licensor.
+
+
+END OF LICENSE
+
+
+
+______________________________	____________
+Licensee			Date
+
+
+
+______________________________	____________
+Paul J. Lucas			Date

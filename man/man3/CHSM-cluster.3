@@ -1,0 +1,105 @@
+.\"
+.\"	    CHSM Language System
+.\"	    CHSM::cluster.3 -- cluster class manual page
+.\"
+.\"	    Copyright (C) 1996-2013  Paul J. Lucas & Fabio Riccardi
+.\"
+.\"	    This program is free software; you can redistribute it and/or modify
+.\"	    it under the terms of the GNU General Public License as published by
+.\"	    the Free Software Foundation; either version 2 of the License, or
+.\"	    (at your option) any later version.
+.\" 
+.\"	    This program is distributed in the hope that it will be useful,
+.\"	    but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"	    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"	    GNU General Public License for more details.
+.\" 
+.\"	    You should have received a copy of the GNU General Public License
+.\"	    along with this program; if not, write to the Free Software
+.\"	    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.TH \f3CHSM::cluster\f1 3 "January 21, 2010" "CHSM" "CHSM Language System"
+.SH NAME
+cluster \- CHSM cluster class
+.SH SYNOPSIS
+.ft CW
+.nf
+#define CHSM_CLUSTER_ARGS	/* ... */
+#define CHSM_CLUSTER_INIT	/* ... */
+
+namespace Concurrent_Hierarchical_State_Machine {
+
+    class cluster : public parent {
+    public:
+        cluster( CHSM_CLUSTER_ARGS );
+        void clear();
+
+        // inherited
+
+        typedef state value_type;
+        typedef value_type* pointer;
+        typedef value_type const* const_pointer;
+        typedef value_type& reference;
+        typedef value_type const& const_reference;
+
+        class iterator;
+        class const_iterator;
+
+        bool active() const;
+        iterator begin();
+        const_iterator begin() const;
+        virtual void deep_clear();
+        bool empty() const;
+        iterator end();
+        const_iterator end() const;
+        virtual bool enter( event const &trigger, state* = 0 );
+        virtual bool exit ( event const &trigger, state* = 0 );
+        reference front();
+        const_reference front() const;
+        char const* name() const;
+        parent* parent_of() const;
+    };
+
+}
+.fi
+.ft 1
+.SH DESCRIPTION
+A \f(CWcluster\f1
+.I is-a
+.BR CHSM::parent (3)
+that represents a logical-exclusive-or grouping of its child states where
+.I "exactly one"
+child-state is active at any given time.
+.PP
+A \f(CWcluster\f1 may have a history.
+If a \f(CWcluster\f1 does not have a history,
+or it does have a history but has not previously been active,
+then the child-state entered after it itself is entered
+is the
+.I default
+child-state;
+if a \f(CWcluster\f1 does have a history and it has been visited before,
+then the child-state entered after it itself is entered
+is the one that was last active.
+.PP
+A \f(CWcluster\f1 may alternatively have a
+.I deep
+history.
+Such a \f(CWcluster\f1 behaves exactly as one with an ordinary history;
+the difference is that all \f(CWcluster\f1s lexically-enclosed by it
+in the CHSM description also have a history.
+.SS "Member Function"
+.IP "\f(CWvoid clear()\f1"
+Clears the history of this cluster only.
+.SH SEE ALSO
+.BR CHSM::cluster (3),
+.BR CHSM::parent (3),
+.BR CHSM::state (3),
+.BR chsm-c++ (4)
+.SH AUTHORS
+Paul J. Lucas
+.RI < paul@lucasmail.org >
+.br
+Fabio Riccardi
+.RI < fabio.riccardi@mac.com >
+.\" vim:set et sw=4 ts=4:

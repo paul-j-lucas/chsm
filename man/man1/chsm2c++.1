@@ -1,0 +1,109 @@
+.\"
+.\"     CHSM Language System
+.\"     chsm2c++.1 -- CHSM-to-C++ Compiler manual page
+.\"
+.\"     Copyright (C) 1996-2013  Paul J. Lucas & Fabio Riccardi
+.\"
+.\"     This program is free software; you can redistribute it and/or modify
+.\"     it under the terms of the GNU General Public License as published by
+.\"     the Free Software Foundation; either version 2 of the License, or
+.\"     (at your option) any later version.
+.\"
+.\"     This program is distributed in the hope that it will be useful,
+.\"     but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"     GNU General Public License for more details.
+.\"
+.\"     You should have received a copy of the GNU General Public License
+.\"     along with this program; if not, write to the Free Software
+.\"     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.TH \f3chsm2c++\f1 1 "January 21, 2010" "CHSM" "CHSM Language System"
+.SH NAME
+chsm2c++ \- CHSM-to-C++ compiler
+.SH SYNOPSIS
+.B chsm2c++
+[
+.I options
+]
+.I "source-file declaration-file definition-file"
+.SH DESCRIPTION
+.B chsm2c++
+is the Concurrent Hierarchical Finite State Machine compiler for C++.
+.PP
+Unless the
+.B \-E
+option is used,
+.BR chsm2c++ ,
+given a CHSM description in
+.IR source-file ,
+produces two C++ source files:
+a declaration file
+and a definition file.
+The files are suitable for subsequent compilation with a C++ compiler;
+however, additional
+.BR \-I ,
+.BR \-L ,
+and
+.B \-l
+options may need to be given for the compilation to succeed
+depending on where the CHSM include file and libraries have been installed.
+The
+.BR chsmc (1)
+driver script is ordinarily configured to supply the necessary options
+to the underlying C++ compiler;
+hence, its use is preferred over using
+.B chsm2c++
+directly.
+.SH OPTIONS
+.TP
+.B \-E
+Send all the generated C++ code to standard output
+instead of producing the declaration and definition files.
+.TP
+.B \-P
+Suppress \f(CW#line\f1 directives in the generated C++ code.
+.TP
+.B \-S
+Produce semantic stack debugging information.
+(Such information is useful only to developers modifying the CHSM grammar.)
+Note:
+The software must have been compiled with \f(CWPJL_STACK_DEBUG\f1 defined,
+otherwise a warning message is issued and the option is ignored.
+.TP
+.B \-v
+Print the version number of
+.B chsm2c++
+and exit.
+.TP
+.B \-Y
+Turn on
+.BR yacc (1)
+debugging output.
+(Such information is useful only to developers modifying the CHSM grammar.)
+Note:
+The software must have been compiled with \f(CWYYDEBUG\f1 defined,
+otherwise a warning message is issued and the option is ignored.
+.SH FILES
+.PD 0
+.TP 14
+\f(CWchsm_\f2pid
+temporary file
+.PD
+.SH EXAMPLE
+\f(CWchsm2c++ hello.chsm hello.h hello.c\f1
+.SH SEE ALSO
+.BR chsmc (1),
+.BR yacc (1),
+.BR chsm (4)
+.SH DIAGNOSTICS
+The diagnostics produced by
+.B chsm2c++
+itself are intended to be self-explanatory.
+.SH AUTHORS
+Paul J. Lucas
+.RI < paul@lucasmail.org >
+.br
+Fabio Riccardi
+.RI < fabio.riccardi@mac.com >
+.\" vim:set et sw=4 ts=4:

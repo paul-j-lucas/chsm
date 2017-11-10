@@ -1,0 +1,43 @@
+===============================================================================
+What to do if you find a bug
+===============================================================================
+
+In the hopefully rare circumstance that you find a bug, please report it to me
+by e-mail: <paul@lucasmail.org>.  Please include the following information:
+
+1. A description of the problem.
+2. Operating system and version.
+3. Compiler used and version.
+4. The exact command line used.
+5. If the program dumps core (C++) or throws an exception (Java), a stack trace.
+
+-------------------------------------------------------------------------------
+To get a stack trace for C++:
+
+1. Go to the "config" directory and edit the "config.mk" file uncommenting the
+   line:
+
+	DEBUG:=		true
+
+2. Go back to the top-level directory and type:
+
+	make distclean
+	make
+
+3. Re-execute the same command to make it dump core again.  A "core" file
+   should be generated (if the filesystem is writable and you have write
+   permission to it).  For Mac OS X, core files are placed in the directory
+   /cores and are of the form "core.XXXXX" where XXXXX is the process ID.
+
+   If you can write to the filesystem yet no core file was generated, type:
+
+	ulimit -c unlimited
+
+   and try again.
+
+4. Execute gdb by typing:
+
+	gdb /path/to/chsm-executable /path/to/core
+
+5. Then in gdb, type "where" and copy and paste the output into an e-mail
+   message to me.

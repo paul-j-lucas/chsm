@@ -1,0 +1,75 @@
+/*
+**      CHSM Language System
+**      src/c++/tests/enter_exit.chsmc
+**
+**      Copyright (C) 1996-2013  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 2 of the License, or
+**      (at your option) any later version.
+** 
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+** 
+**      You should have received a copy of the GNU General Public License
+**      along with this program; if not, write to the Free Software
+**      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
+
+#include <iostream>
+using namespace std;
+
+int exit_code = 1;
+
+%%
+
+// Tests that enter/exit code works.
+
+chsm my_machine {
+    upon enter %{                   // 1
+        exit_code *= 2;
+    %}
+    upon exit %{                    // 6
+        exit_code *= 2;
+    %}
+} is {
+    cluster c(x) {
+        upon enter %{               // 2
+            exit_code *= 2;
+        %}
+        upon exit %{                // 5
+            exit_code *= 2;
+        %}
+    } is {
+        state x {
+            upon enter %{           // 3
+                exit_code *= 2;
+            %}
+            upon exit %{            // 4
+                exit_code *= 2;
+            %}
+        }
+    }
+}
+
+%%
+
+int main() {
+    my_machine m;
+
+#ifdef DEBUG
+    m.debug( CHSM::machine::D_all );
+#endif
+
+    m.enter();
+    m.exit();
+
+    exit_code -= 64;
+
+    cout << (exit_code ? "INCORRECT" : "correct") << endl;
+    return exit_code;
+}
+// vim:set et sw=4 ts=4 syntax=cpp:
