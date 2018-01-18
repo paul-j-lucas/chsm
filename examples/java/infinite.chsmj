@@ -1,0 +1,71 @@
+/*
+**      CHSM Language System
+**      src/examples/java/infinite.chsmj
+**
+**      Copyright (C) 2004-2018  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 3 of the License, or
+**      (at your option) any later version.
+**
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+**
+**      You should have received a copy of the GNU General Public License
+**      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file
+ * Complete program to illustrate the infinite loop problem as a consequence of
+ * using microsteps in the CHSM run-time implementation.
+ *
+ * @note This is a "toy" program that exists for pedagogical reasons.
+ */
+
+%%
+///////////////////////////////////////////////////////////////////////////////
+
+chsm infinite_chsm is {
+  event x;
+  event y;
+
+  set S(L,R) is {
+    cluster L(a,b) is {
+      state a {
+        x -> b %{ y(); %};
+      }
+      state b {
+        x -> a %{ y(); %};
+      }
+    }
+    cluster R(c,d) is {
+      state c {
+        y -> d %{ x(); %};
+      }
+      state d {
+        y -> c %{ x(); %};
+      }
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+%%
+
+public class infinite {
+  public static void main( String args[] ) {
+    infinite_chsm m = new infinite_chsm();
+    m.enter();
+
+    m.debug( CHSM.Machine.DEBUG_ALL );
+    m.x();
+    m.dumpState();
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// vim:set et sw=2 ts=2 syntax=java:

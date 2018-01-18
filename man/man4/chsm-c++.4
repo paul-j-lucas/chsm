@@ -2,11 +2,11 @@
 .\"     CHSM Language System
 .\"     chsm-c++.4 -- Language description manual page
 .\"
-.\"     Copyright (C) 1996-2013  Paul J. Lucas & Fabio Riccardi
+.\"     Copyright (C) 1996-2018  Paul J. Lucas & Fabio Riccardi
 .\"
 .\"     This program is free software; you can redistribute it and/or modify
 .\"     it under the terms of the GNU General Public License as published by
-.\"     the Free Software Foundation; either version 2 of the License, or
+.\"     the Free Software Foundation; either version 3 of the License, or
 .\"     (at your option) any later version.
 .\"     
 .\"     This program is distributed in the hope that it will be useful,
@@ -15,8 +15,7 @@
 .\"     GNU General Public License for more details.
 .\"     
 .\"     You should have received a copy of the GNU General Public License
-.\"     along with this program; if not, write to the Free Software
-.\"     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .\"
 .\" ---------------------------------------------------------------------------
 .\" define code-start macro
@@ -48,15 +47,15 @@
 .PP
 ..
 .\" ---------------------------------------------------------------------------
-.TH \f3CHSM-C++\f1 4 "July 2, 2013" "CHSM" "CHSM Language System"
+.TH \f3CHSM-C++\fP 4 "January 18, 2018" "CHSM" "CHSM Language System"
 .SH "NAME"
 CHSM-C++ \- Concurrent, Hierarchical, Finite State Machine specification language for C++
 .SH "SYNOPSIS"
 .nf
 .I declarations
-\f(CW%%\f1
+\f(CW%%\fP
 .I description
-\f(CW%%\f1
+\f(CW%%\fP
 .I user-code
 .fi
 .SH "DESCRIPTION"
@@ -73,11 +72,11 @@ allows integration of arbitrary C code.
 .SS "File Format"
 A CHSM description file is an ordinary text file with three sections:
 declarations, description, and user-code.
-The sections are separated by the \f(CW%%\f1 token
+The sections are separated by the \f(CW%%\fP token
 that must be at the beginning of a line.
 The declarations and user-code sections may be empty;
 if the user-code section is empty,
-then the trailing \f(CW%%\f1 may be omitted.
+then the trailing \f(CW%%\fP may be omitted.
 If present, the declarations and user-code sections are passed through,
 untouched, to the underlying C++ compiler.
 The description file is otherwise free-format.
@@ -90,7 +89,7 @@ The declarations section is meant to contain
 any C++ declarations or definitions, or preprocessor directives
 needed to compile the resultant C++ code.
 .SS "Comments"
-Both \f(CW/* ... */\f1 and \f(CW//\f1 comments may be used anywhere
+Both \f(CW/* ... */\fP and \f(CW//\fP comments may be used anywhere
 in the CHSM description file where whitespace is legal.
 .SS "Identifiers"
 Identifiers follow the same rules for what constitutes a valid identifier
@@ -149,12 +148,11 @@ Such an identifier can still be referenced by using one of the scope-resolution
 operators (see STATE NAMES).
 .PP
 .I "Code-block"
-scope exists only within \f(CW%{ %}\f1 pairs.
+scope exists only within \f(CW%{ %}\fP pairs.
 It is treated exactly like a C++ function.
 All state names and all event names are in the scope of all blocks.
-Code blocks follow the ``C++ rewriting rule'' for \f(CWinline\f1 functions
-(see ARM, 9.3.2),
-although they are not \f(CWinline\f1 functions.
+Code blocks follow the ``C++ rewriting rule'' for \f(CWinline\fP functions,
+although they are not \f(CWinline\fP functions.
 .RE
 .SS "Initialization"
 A CHSM is fully initialized upon definition.
@@ -177,12 +175,12 @@ int main() {
 .SS "Types"
 There are five fundamental types: machine, state, cluster, set, and event;
 each is an instance of the
-.BR CHSM::machine (3),
-.BR CHSM::state (3),
-.BR CHSM::cluster (3),
-.BR CHSM::set (3),
+.BR CHSM::machine ,
+.BR CHSM::state ,
+.BR CHSM::cluster ,
+.BR CHSM::set ,
 or
-.BR CHSM::event (3)
+.B CHSM::event
 class, respectively.
 .SH "MACHINE DESCRIPTIONS"
 Machine descriptions have the form:
@@ -213,14 +211,14 @@ description:!state-desc
 If \f(CW<\f2class-name\f(CW>\f1 is given as part of
 .IR state-decl ,
 said class must have been derived (directly or indirectly)
-from \f(CWCHSM::machine\f1.
+from \f(CWCHSM::machine\fP.
 .PP
 States declared in
 .I description-list
-are child states of an implicit cluster named \f(CWroot\f1.
-Declaring a CHSM with \f(CWhistory\f1 gives the \f(CWroot\f1 cluster a history.
+are child states of an implicit cluster named \f(CWroot\fP.
+Declaring a CHSM with \f(CWhistory\fP gives the \f(CWroot\fP cluster a history.
 See
-.BR CHSM::cluster (3)
+.B CHSM::cluster
 for more information.
 .SS "Parameter Lists"
 Parameter lists are based on C++ function
@@ -237,10 +235,11 @@ Additionally, they may not have default values:
 chsm my_machine( int x = 0 ) is {   // illegal: default value
 .cE
 See
-.BR CHSM::machine (3)
+.B CHSM::machine
 for more information.
 .SS "Enter-Exit-Blocks"
-\f2Enter-exit-blocks\f1 are arbitrary C++ code
+.I Enter-exit-blocks
+are arbitrary C++ code
 executed upon CHSM or state entrances and/or exits.
 They have the form:
 .gS
@@ -274,7 +273,7 @@ They can be specified in either order with no semantic difference.
 .PP
 Within
 .IR C++-statement-list ,
-the variables \f(CWevent\f1 and \f(CWstate\f1 are available
+the variables \f(CWevent\fP and \f(CWstate\fP are available
 and are references to the event that triggered the transition
 and enclosing state, respectively:
 .cS
@@ -300,9 +299,9 @@ state-body:!\f(CW{\fP \f3\s+2[\s-2\fPenter-exit-blocks\f3\s+2]\s-2\fP \f3\s+2[\s
 If \f(CW<\f2class-name\f(CW>\f1 is given as part of
 .IR state-decl ,
 said class must have been derived (directly or indirectly)
-from \f(CWCHSM::state\f1.
+from \f(CWCHSM::state\fP.
 See
-.BR CHSM::state (3)
+.B CHSM::state
 for more information.
 .PP
 A
@@ -353,8 +352,8 @@ in the
 is the default child-state.
 .PP
 See
-.BR CHSM::cluster (3)
-for information about \f(CWhistory\f1.
+.B CHSM::cluster
+for information about \f(CWhistory\fP.
 .SH "SET DESCRIPTIONS"
 Set descriptions have the form:
 .gS
@@ -365,7 +364,7 @@ set-desc:!\f(CWset\fP state-decl \f(CW(\fPchild-list\f(CW)\fP \f3\s+2[\s-2\fPsta
 .TE
 .gE
 See
-.BR CHSM::set (3)
+.B CHSM::set
 for more information.
 .SH "EVENT DESCRIPTIONS"
 Event descriptions have the form:
@@ -381,12 +380,12 @@ descriptions.
 If \f(CW<\f2event-name\f(CW>\f1 is given, said event is a
 .IR "base event" .
 See
-.BR CHSM::event (3)
+.B CHSM::event
 for more information.
 .SS "Parameter Lists"
 If an event has been declared with parameters,
-they can be accessed via the C++ \f(CWoperator\->\f1
-(not to be confused with the CHSM transition operator \f(CW\->\f1):
+they can be accessed via the C++ \f(CWoperator\->\fP
+(not to be confused with the CHSM transition operator \f(CW\->\fP):
 .cS
 event say( char const *message );
 
@@ -397,7 +396,7 @@ state s {
 }
 .cE
 Additionally, all parameters inherited from base events, if any,
-are also accessible via \f(CWoperator\->\f1:
+are also accessible via \f(CWoperator\->\fP:
 .cS
 event<say> quote( char const *author );
 
@@ -426,7 +425,7 @@ For example:
 .cS
 event mouse( int x, int y ) [ x >= 0 && y >= 0 ];
 .cE
-would discard all \f(CWmouse\f1 events when either coordinate is negative.
+would discard all \f(CWmouse\fP events when either coordinate is negative.
 If C++ code for a precondition is more complicated than
 a simple expression can easily accommodate,
 then a function can be specified instead:
@@ -438,12 +437,12 @@ event login( int pin ) %{
     return false;
 %};
 .cE
-Precondition functions must use the C++ \f(CWreturn\f1 statement explicitly
-to return an expression convertible to \f(CWbool\f1.
+Precondition functions must use the C++ \f(CWreturn\fP statement explicitly
+to return an expression convertible to \f(CWbool\fP.
 In either form,
 an event need not have parameters in order to have a precondition
 (which could test some global data, for example).
-Preconditions are considered \f(CWconst\f1 member functions of the CHSM.
+Preconditions are considered \f(CWconst\fP member functions of the CHSM.
 .SH "STATE NAMES"
 When referring to state names,
 they have the form:
@@ -576,7 +575,7 @@ other states can make transitions on these events like just like user events:
 enter(s) -> t;
 .cE 0
 .SS "Equality"
-There are the global operators \f(CW==\f1 and \f(CW!=\f1
+There are the global operators \f(CW==\fP and \f(CW!=\fP
 that test whether two events are equal or not.
 For example:
 .cS
@@ -627,7 +626,7 @@ target-expression:!C++-expression
 A
 .I condition
 is any valid C++ expression
-that yields a value convertible to \f(CWbool\f1.
+that yields a value convertible to \f(CWbool\fP.
 For example:
 .cS
 state s {
@@ -654,7 +653,7 @@ For example:
 .cS
     beta -> t %{ ++counter; %};
 .cE
-Within an action, the variable \f(CWevent\f1 is available
+Within an action, the variable \f(CWevent\fP is available
 and is a reference to the event that triggered the transition:
 .cS
     alpha, beta -> t %{
@@ -768,7 +767,7 @@ Note that returning a state that results in an illegal transition
 (such as a child state of a set transitioning to a sibling)
 results in undefined behavior.
 .PP
-Within a target-expression, the variable \f(CWevent\f1 is available
+Within a target-expression, the variable \f(CWevent\fP is available
 and is a reference to the event that triggered the transition:
 .cS
     alpha, beta -> [ f( event ) ];
@@ -776,8 +775,8 @@ and is a reference to the event that triggered the transition:
 .SH "SPECIAL CONSTRUCTS"
 Within all C++ code for
 enter-exit-blocks, preconditions, conditions, and actions,
-the following \f(CW$\f1 constructs can be used:
-.SS "\f(CW${\f2state-name\fP}\f1"
+the following \f(CW$\fP constructs can be used:
+.SS "\f(CW${\f2state-name\fP}\fP"
 Refers to the state
 .IR state-name :
 .cS
@@ -792,17 +791,17 @@ chsm my_machine is {
     }
 }
 .cE
-If the \f(CW${\f2state-name\fP}\f1 notation were not used,
+If the \f(CW${\f2state-name\fP}\fP notation were not used,
 the fully-qualified state name would need to be used instead:
 .cS
                 c.s.member_function();
 .cE
 This notation also permits the scope-resolution operators to be used
 inside of it.
-.SS "\f(CW$enter(\f2state-name\fP)\f1, \f(CW$exit(\f2state-name\fP)\f1"
+.SS "\f(CW$enter(\f2state-name\fP)\fP, \f(CW$exit(\f2state-name\fP)\fP"
 Refers to the enter/exit event of
 .I state-name
-(instead of the C++ library function \f(CWexit()\f1, for example):
+(instead of the C++ library function \f(CWexit()\fP, for example):
 .cS
         alpha, exit(s) -> t %{
             if ( event == $exit(s) )
@@ -810,7 +809,7 @@ Refers to the enter/exit event of
         %};
 .cE 0
 .SS "\f(CW$in(\fP \f2state-name\fP \f(CW)\fP"
-Returns \f(CWtrue\f1 only if the CHSM is in the state
+Returns \f(CWtrue\fP only if the CHSM is in the state
 .IR state-name :
 .cS
         alpha[ $in( s ) ] -> t;
@@ -832,28 +831,23 @@ is not thread-safe unless made so by the user.
 .SH "FILES"
 .PD 0
 .TP 14
-\f2file\f(CW.chsmc\f1
-CHSM/C++ source file
+.IR source \f(CW.chsmc\fP
+CHSM-C++ source file
 .TP
-\f2file\f(CW.h\f1
-intermediate C++ declaration file
+.IR source \f(CW.h\fP
+generated C++ declaration file
 .TP
-\f2file\f(CW.c\f1
-intermediate C++ definition file
+.IR file \f(CW.cpp\fP
+generated C++ definition file
 .PD
 .SH "SEE ALSO"
 .BR chsmc (1),
-.BR CHSM::cluster (3),
-.BR CHSM::event (3),
-.BR CHSM::machine (3),
-.BR CHSM::parent (3),
-.BR CHSM::set (3),
-.BR CHSM::state (3)
-.PP
-Margaret A. Ellis and Bjarne Stroustrup.
-.I The Annotated C++ Reference Manual,
-Addison-Wesley, Reading, MA, 1990.
-pp. 178-179.
+.BR CHSM::cluster ,
+.BR CHSM::event ,
+.BR CHSM::machine ,
+.BR CHSM::parent ,
+.BR CHSM::set ,
+.B CHSM::state
 .PP
 David Harel, et al.
 ``On the Formal Semantics of Statecharts.''
@@ -873,7 +867,6 @@ Implementing Concurrent, Hierarchical, Finite State Machines.''
 .I "M.S. Thesis,"
 University of Illinois at Urbana-Champaign, 1993.
 Technical Report: UIUCDCS-R-94-1868.
-\f(CWhttp://www.paujlucas.org/resume/thesis.pdf\f1
 .SH "AUTHORS"
 Paul J. Lucas
 .RI < paul@lucasmail.org >

@@ -1,0 +1,140 @@
+/*
+**      CHSM Language System
+**      examples/c++/h2o.chsmc
+**
+**      Copyright (C) 1996-2018  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 3 of the License, or
+**      (at your option) any later version.
+**
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+**
+**      You should have received a copy of the GNU General Public License
+**      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file
+ * Complete program to implement a state machine that simulates Petri Nets.
+ *
+ * @note This is a "toy" program that exists for pedagogical reasons.
+ */
+
+// CHSM
+#include <chsm.h>
+
+// standard
+#include <cctype>
+#include <iostream>
+
+using namespace std;
+
+///////////////////////////////////////////////////////////////////////////////
+
+/**
+ * This class is meant to simulate the behavior of a "place" in Petri Net
+ * terminology.  Places have zero or more tokens at them.
+ */
+class place : public CHSM::state {
+public:
+  place( CHSM_STATE_ARGS ) : CHSM::state( CHSM_STATE_INIT ), tokens_( -1 ) { }
+
+  /**
+   * Conversion to `int`: Allows state name to be used in arithmetic
+   * expressions.
+   */
+  operator int() const {
+    return tokens_;
+  }
+
+  /**
+   * Operator to allow the number of tokens to be decrmemented.
+   *
+   * @param used The number of tokens to decrement by.
+   */
+  int operator-=( int used ) {
+    return tokens_ -= used + 1;
+  }
+
+protected:
+  bool enter( CHSM::event const&, CHSM::state* = nullptr ) override;
+
+private:
+  int tokens_;
+};
+
+bool place::enter( CHSM::event const &trigger, CHSM::state *from_child ) {
+  //
+  // Call base-class enter() function as required and proceed only if it
+  // returns true.
+  //
+  if ( !CHSM::state::enter( trigger, from_child ) )
+    return false;
+  //
+  // Increment the number of tokens for every entrance.
+  //
+  ++tokens_;
+
+  return true;
+}
+
+unsigned water_molecules = 0;
+
+%%
+///////////////////////////////////////////////////////////////////////////////
+
+chsm make_water is {
+  set H2O( H2, O2 ) {
+    //
+    // The conditions might seem to be off by one for hydrogen on the
+    // transition of hydrogen and similarly for oxygen.  You have to remember
+    // that the transition being triggered itself is either a hydrogen or
+    // oxygen so we have to take that into account.
+    //
+    hydrogen[ ${H2} >= 1 && ${O2} >= 1 ] -> H2O %{
+      ${H2} -= 1, ${O2} -= 1;
+      water_molecules += 2;
+    %};
+    oxygen[ ${H2} >= 2 ] -> H2O %{
+      ${H2} -= 2;
+      water_molecules += 2;
+    %};
+  } is {
+    state<place> H2 { hydrogen -> H2; }
+    state<place> O2 { oxygen -> O2; }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+%%
+
+int main() {
+  make_water water;
+  water.enter();
+
+  while ( !cin.eof() ) {
+    cout << "\nEnter: (H)ydrogen (O)xygen: " << flush;
+    char ch;
+    cin >> ch;
+    switch ( toupper( ch ) ) {
+      case 'H': water.hydrogen(); break;
+      case 'O': water.oxygen()  ; break;
+      default:
+        cerr << "Invalid input\n";
+        continue;
+    } // switch
+    cout << "H = " << water.H2O.H2 << ", "
+         << "O = " << water.H2O.O2 << ", "
+         << "water molecules = " << water_molecules << endl;
+  } // while
+
+  return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// vim:set et sw=2 ts=2 syntax=cpp:

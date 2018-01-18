@@ -1,0 +1,85 @@
+/*
+**      CHSM Language System
+**      test/c++/tests/history2.chsmc
+**
+**      Copyright (C) 1996-2018  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 3 of the License, or
+**      (at your option) any later version.
+** 
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+** 
+**      You should have received a copy of the GNU General Public License
+**      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file
+ * Test the "history" feature on CHSMs.
+ */
+
+// local
+#include "chsm_cxx_test.h"
+
+// standard
+#include <iostream>
+using namespace std;
+
+static int exit_code = 0;
+
+%%
+///////////////////////////////////////////////////////////////////////////////
+
+chsm my_machine deep history is {
+  state a {
+    alpha -> c.y;
+  }
+  cluster c(x,y) is {
+    state x;
+    state y;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+%%
+
+int main() {
+  my_machine m;
+  m.enter();
+
+#ifdef DEBUG
+  m.debug( CHSM::machine::DEBUG_ALL );
+#endif
+
+  m.alpha();
+
+#ifdef DEBUG
+  m.dump_state();
+#endif
+
+  m.exit();
+
+#ifdef DEBUG
+  m.dump_state();
+#endif
+
+  m.enter();
+
+#ifdef DEBUG
+  m.dump_state();
+#endif
+
+  CHSM_TEST( m.active() &&
+    !m.a.active() && !m.c.x.active() && m.c.y.active()
+  );
+
+  PRINT_RESULT();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// vim:set et sw=2 ts=2 syntax=cpp:

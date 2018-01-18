@@ -1,0 +1,512 @@
+/*
+**      CHSM Language System
+**      src/c++/chsmc/lexer.lpp
+**
+**      Copyright (C) 1996-2018  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 3 of the License, or
+**      (at your option) any later version.
+**
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+**
+**      You should have received a copy of the GNU General Public License
+**      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file
+ * Defines helper macros, data structures, variables, functions, and the
+ * tokenizer for the CHSM compiler.
+ */
+
+/** @cond DOXYGEN_IGNORE */
+
+%option nounput
+%option yylineno
+
+%{
+/** @endcond */
+
+// local
+#include "config.h"                     /* must go first */
+#include "chsm_compiler.h"
+#include "code_generator.h"
+#include "lexer.h"
+#include "literals.h"
+#include "util.h"
+#include "parser.hpp"                   /* must go last */
+
+/// @cond DOXYGEN_IGNORE
+
+// standard
+#include <cassert>
+#include <cstdlib>                      /* for exit() */
+#include <cstring>
+#include <iostream>
+#include <stack>
+
+/// @endcond
+
+/**
+ * Switch to a different start condition remembering the current one so we can
+ * resume it later.
+ *
+ * @hideinitializer
+ */
+#define CALL(START_COND) \
+  BLOCK( sconds.push( YY_START ); BEGIN( START_COND ); )
+
+/**
+ * Resume the previous start condition.
+ *
+ * @hideinitializer
+ */
+#define RESUME() \
+  BLOCK( BEGIN( sconds.top() ); sconds.pop(); )
+
+/**
+ * Flex uses `register` in the code it generates, but `register` is deprecated
+ * in C++11, so just define it to nothing.
+ */
+#define register                  /* nothing */
+
+/**
+ * We must use this macro to return tokens to ensure that the global text
+ * pointer gets set.  Ordinarily, one wouldn't have to do this for simple
+ * tokens, but the subroutine production arg_cat in parser.ypp needs all the
+ * text to glue together.  See the comments in parser.y[[ for more info.
+ *
+ * @hideinitializer
+ */
+#define RETURN(TOKEN) \
+  BLOCK( lexer::get().token = ::yytext; return (TOKEN); )
+
+/**
+ * Echo the current lexer text to the target file.
+ *
+ * @hideinitializer
+ */
+#define T_ECHO                    cc.code_gen_->emit_text( ::yytext )
+
+/**
+ * Echo the current lexer text to the temporary user code file.
+ *
+ * @hideinitializer
+ */
+#define U_ECHO                    cc.user_code_->out() << ::yytext
+
+/**
+ * Override flex's input to read from the CHSM source file.
+ *
+ * @param BUF The buffer to read bytes into.
+ * @param RESULT The variable to set the number of bytes read.
+ * @param MAX_SIZE The maximum number of bytes to read.
+ * @hideinitializer
+ */
+#define YY_INPUT(BUF,RESULT,MAX_SIZE) BLOCK(                \
+    if ( cc.source_->in().read( (BUF), (MAX_SIZE) ).bad() ) \
+      YY_FATAL_ERROR( "read() in flex scanner failed" );    \
+    cc.source_->in().clear( ios_base::goodbit );            \
+    RESULT = cc.source_->in().gcount();                     \
+  )
+
+/**
+ * Overrides flex's fatal error message to print the message in our format and
+ * also exit with the status code we want.
+ *
+ * @param MSG The error message to print.
+ * @hideinitializer
+ */
+#define YY_FATAL_ERROR(MSG)       lex_fatal( MSG )
+
+using namespace PJL;
+using namespace std;
+
+///////////////////////////////////////////////////////////////////////////////
+
+/** Start-condition stack. */
+typedef stack<yy_state_type> scond_stack;
+
+/**
+ * CHSM keyword info.
+ */
+struct keyword {
+  char const *literal;                  ///< C string literal of the keyword.
+  int         y_token;                  ///< Bison token number.
+};
+
+/**
+ * All CHSM keywords.
+ *
+ * @hideinitializer
+ */
+static keyword const KEYWORDS[] = {     // in alphabetical order
+  { L_CHSM,     Y_CHSM      },
+  { L_CLUSTER,  Y_CLUSTER   },
+  { L_CONST,    Y_CONST     },
+  { L_DEEP,     Y_DEEP      },
+  { L_ENTER,    Y_ENTER     },
+  { L_EVENT,    Y_EVENT     },
+  { L_EXIT,     Y_EXIT      },
+  { L_FINAL,    Y_FINAL     },
+  { L_HISTORY,  Y_HISTORY   },
+  { L_IN,       Y_IN        },
+  { L_IS,       Y_IS        },
+  { L_PARAM,    Y_PARAM     },
+  { L_PUBLIC,   Y_PUBLIC    },          // Java only
+  { L_SET,      Y_SET       },
+  { L_STATE,    Y_STATE     },
+  { L_UPON,     Y_UPON      },
+  { L_VOLATILE, Y_VOLATILE  },
+  { nullptr,    0           }
+};
+
+// local variables
+static unsigned     bracket_count;      ///< Balances `[]` in conditions.
+static unsigned     just_did_ident;     ///< Used during substate processing.
+static scond_stack  sconds;             ///< Start-condition stack.
+
+////////// local functions ////////////////////////////////////////////////////
+
+/**
+ * Finds a CHSM keyword matching \a s, if any.
+ *
+ * @param s The string to find.
+ * @return Returns a pointer to the corresponding keyword or null if not found.
+ */
+static keyword const* keyword_find( char const *s ) {
+  for ( keyword const *k = KEYWORDS; k->literal; ++k ) {
+    int const cmp = ::strcmp( s, k->literal );
+    if ( cmp < 0 )
+      break;
+    if ( cmp == 0 )
+      return k;
+  } // for
+  return nullptr;
+}
+
+/**
+ * Emits a lexical error.
+ *
+ * @param msg The error message.
+ */
+inline void lex_error( char const *msg ) {
+  cc.source_->error() << "(lexical) " << msg << endl;
+}
+
+/**
+ * Called by flex only when there's a fatal error.
+ *
+ * @param msg The error message to print.
+ */
+static void lex_fatal( char const *msg ) {
+  //
+  // This is defined down here to avoid having to declare yy_fatal_error
+  // ourselves and having to get it right being subject to possible changes in
+  // its signature in different flex versions.
+  //
+  cc_fatal() << msg << endl;
+  ::exit( EX_NOINPUT );
+
+  // Not reached -- "called" just to silence the "unused function" warning.
+  yy_fatal_error( msg );
+}
+
+/**
+ * Standard lex function to know whether to continue parsing upon reaching EOF.
+ *
+ * @return Always returns 1 to indicate done.
+ */
+static int yywrap( void ) {
+  return 1;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+/// @cond DOXYGEN_IGNORE
+
+%}
+
+/**
+ * Used to process the CHSM description section, i.e., after the first %% and
+ * before the second, if any.
+ */
+%s MAIN
+
+/**
+ * Used between `[` and `]` for event conditions that are arbitrary C++
+ * expressions.  Text is diverted to the temporary user-code file.  During this
+ * state, the `$` token is recognized as an escape for specifying embedded
+ * constructs; see the comment for EMBED.
+ */
+%s COND
+
+/**
+ * Used between `%{` and `%}` for arbitrary C++ code.  Text is diverted to the
+ * temporary user-code file.  During this state, the `$` token is recognized as
+ * an escape for specifying embedded constructs; see the comment for EMBED.
+ */
+%s CODE
+
+/**
+ * Used as a sub-state during either COND or CODE for recognizing the embedded
+ * constructs:
+ *
+ *      $enter(s) $exit(s) $in(s) ${s}
+ */
+%s EMBED
+
+/**
+ * Both the TEMPLATE and the VECTOR states are used between `(` and `)` for
+ * event parameter declarations that are C++ declarations.  Text between `<`
+ * and `>` for TEMPLATE and `[` and `]` for VECTOR is irrelevant as far as
+ * we're concerned, so it is passed along to the underlying C++ compiler.
+ */
+%s TEMPLATE VECTOR
+
+/**
+ * Used after the second `%%`, if any.  Once in this state, all text is copied
+ * straight through verbatim.  This state is never left.
+ */
+%s DONE
+
+/*****************************************************************************/
+
+A           [A-Za-z_]
+D           [0-9]
+S           [ \b\f\r\t\v]
+
+identifier  {A}({A}|{D})*
+substates   (\.{identifier})+
+
+%%
+    /*
+    ** This code is executed upon every call to yylex() before it does anything
+    ** else.
+    **
+    ** If we returned Y_IDENTIFIER on our last return, we have to leave the
+    ** just_did_ident flag set so that Y_SUBSTATES will be recognized if it
+    ** occurs.  The _next_ time we enter, reset the flag.
+    */
+    if ( just_did_ident == 1 )
+      ++just_did_ident;
+    else
+      just_did_ident = 0;
+
+"/*"                      {             /* ignore C-ctyle comment */
+                            for ( int c = yyinput(), prev = '\0';
+                                  c != EOF; prev = c, c = yyinput() ) {
+                              if ( prev == '*' && c == '/' )
+                                break;
+                              if ( c == '\n' )
+                                ++cc.source_->line_no_;
+                            } // for
+                          }
+"//".*                    ;             /* ignore C++-style comment */
+
+<INITIAL>^%%              { BEGIN( MAIN ); return Y_2PERCENT; }
+<MAIN>^%%                 { BEGIN( DONE ); return Y_2PERCENT; }
+<INITIAL,DONE>.+          { T_ECHO; }
+
+<INITIAL>\n               { ++cc.source_->line_no_; T_ECHO; }
+<MAIN,TEMPLATE,VECTOR>\n  { ++cc.source_->line_no_; }
+<COND,CODE,EMBED>\n       { ++cc.source_->line_no_; U_ECHO; }
+<MAIN,EMBED>{S}+          { /* nothing */; }
+
+<COND,CODE>\"             {             /* handle string literal */
+                            U_ECHO;
+                            for ( int c = yyinput(), prev = '\0';
+                                  c != EOF; prev = c, c = yyinput() ) {
+                              cc.user_code_->out() << (char)c;
+
+                              if ( prev == '\\' ) {
+                                if ( c == '\n' ) {
+                                  //
+                                  // Keep the line number correct even when a
+                                  // string literal contains a newline.
+                                  //
+                                  ++cc.source_->line_no_;
+                                }
+                                continue;
+                              }
+
+                              if ( c == '\n' ) {
+                                lex_error( "newline in string literal" );
+                                ++cc.source_->line_no_;
+                                break;
+                              }
+
+                              if ( c == '"' )
+                                break;
+                            } // for
+                          }
+
+<COND,CODE>'(.|\')+'      { U_ECHO; }
+<COND,CODE>'              |
+<COND,CODE>''             { lex_error( "bad character literal" ); }
+
+<MAIN,EMBED>{identifier}  {
+                            //
+                            // Check to see if it's a keyword; if not, it's
+                            // just a Y_IDENTIFIER.
+                            //
+                            if ( keyword const *k = keyword_find( ::yytext ) )
+                              RETURN( k->y_token );
+                            just_did_ident = 1;
+                            RETURN( Y_IDENTIFIER );
+                          }
+
+<MAIN,EMBED>{substates}   { //
+                            // There's an ambiguity between Y_SUBSTATES and
+                            // Y_DOTS when Y_DOTS is just one dot, e.g.,
+                            //
+                            //      .s "Y_DOTS Y_IDENTIFIER" or "Y_SUBSTATES" ?
+                            //
+                            // To resolve this, we rely on a global flag
+                            // just_did_ident; Y_SUBSTATES is only valid in the
+                            // grammar after a Y_IDENTIFIER, so ".s" not
+                            // preceded by a Y_IDENTIFIER is taken to be
+                            // "Y_DOTS Y_IDENTIFIER."
+                            //
+                            if ( just_did_ident )
+                              RETURN( Y_SUBSTATES );
+                            yyless( 1 );
+                            RETURN( Y_DOTS );
+                          }
+
+<MAIN>"["                 { //
+                            // Normally, []'s are just returned as ordinary
+                            // tokens.  However, if we're doing special
+                            // processing, do not return text up to the
+                            // matching ]; instead divert it for full syntax
+                            // checking by the underlying C++ compiler later
+                            // (behind yacc's back).  While doing this, we
+                            // still have to count and balance []'s to know
+                            // when to stop the covert activity.
+                            //
+                            switch ( lexer::get().state() ) {
+                              case lexer::TOKENIZE_NORMAL:
+                                break;
+                              case lexer::TOKENIZE_ARG_LIST:
+                                BEGIN( VECTOR );
+                                break;
+                              case lexer::TOKENIZE_CONDITION:
+                                BEGIN( COND );
+                                break;
+                            } // switch
+                            bracket_count = 1;
+                            RETURN( ::yytext[0] );
+                          }
+
+<COND>"]"                 {
+                            if ( --bracket_count == 0 ) {
+                              //
+                              // The []'s are now balanced: return to our
+                              // normal state.
+                              //
+                              BEGIN( MAIN );
+                              RETURN( ::yytext[0] );
+                            } else {
+                              U_ECHO;
+                            }
+                          }
+
+<VECTOR>"]"               {
+                            if ( --bracket_count == 0 ) {
+                              //
+                              // The []'s are now balanced: return to our
+                              // normal state.  Note that ::yytext contains all
+                              // the text between [ and ].
+                              //
+                              BEGIN( MAIN );
+                              RETURN( ']' );  // can not do ::yytext[0]
+                            } else {
+                              yymore();
+                            }
+                          }
+
+<MAIN>"<"                 { //
+                            // Similarly to []'s above, <>'s are normally
+                            // returned as ordinary tokens.  However, if we're
+                            // doing argument list processing, do not return
+                            // text up to the matching >; instead accumulate it
+                            // into ::yytext by using yymore() for full syntax
+                            // checking by the underlying C++ compiler later
+                            // (behind yacc's back).  Again, we still have to
+                            // count and balance <>'s to know when to stop the
+                            // covert activity.
+                            //
+                            switch ( lexer::get().state() ) {
+                              case lexer::TOKENIZE_ARG_LIST:
+                                BEGIN( TEMPLATE );
+                                break;
+                              default:
+                                /* suppress warning */;
+                            } // switch
+                            bracket_count = 1;
+                            RETURN( ::yytext[0] );
+                          }
+
+<TEMPLATE>">"             {
+                            if ( --bracket_count == 0 ) {
+                              //
+                              // The <>'s are now balanced: return to our
+                              // normal state.  Note that ::yytext contains all
+                              // the text between < and >.
+                              //
+                              BEGIN( MAIN );
+                              RETURN( '>' );  // can not do ::yytext[0]
+                            } else {
+                              yymore();
+                            }
+                          }
+
+<COND>"["                 { ++bracket_count; U_ECHO; }
+<TEMPLATE>"<"             |
+<VECTOR>"["               { ++bracket_count; yymore(); }
+<TEMPLATE>[^>\n]+         |
+<VECTOR>[^\]\n]+          { yymore(); }
+
+<MAIN>[,;()>{}]           |
+<EMBED>[,({]              { RETURN( ::yytext[0] ); }
+<EMBED>[)}]               { RESUME(); RETURN( ::yytext[0] ); }
+<MAIN>"->"                { RETURN( Y_ARROW ); }
+<MAIN>[*&]                { RETURN( ::yytext[0] ); }
+<MAIN>"&&"                { RETURN( Y_2AMPERSAND ); }
+<MAIN>::{S}*\*            { RETURN( Y_2COLON_STAR ); }
+<MAIN,EMBED>"::"          { RETURN( Y_2COLON ); }
+<MAIN,EMBED>"."+          { RETURN( Y_DOTS ); }
+<MAIN>"%{"                { BEGIN( CODE ); return Y_LCODE; }
+<CODE>"%}"                { BEGIN( MAIN ); return Y_RCODE; }
+<COND,CODE>"$"            { CALL( EMBED ); return ::yytext[0]; }
+
+<COND,CODE>.              { U_ECHO; }
+<MAIN,EMBED>.             { return Y_ERROR; }
+
+%%
+
+/// @endcond
+
+///////////////////////////////////////////////////////////////////////////////
+
+lexer::lexer() : state_( TOKENIZE_NORMAL ), stack_p_( -1 ) {
+  // no nothing else
+}
+
+lexer& lexer::get() {
+  static lexer singleton;
+  return singleton;
+}
+
+void lexer::pop_state() {
+  assert( stack_p_ >= 0 );
+  state_ = stack_[ stack_p_-- ];
+}
+
+///////////////////////////////////////////////////////////////////////////////
+/* vim:set et ts=2 sw=2 syntax=lex: */

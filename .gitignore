@@ -1,10 +1,12 @@
 *.a
+*.dSYM
 *.in
 *.o
 *~
 .*.swp
 .deps
 .DS_Store
+javadoc
 Makefile
 /aclocal.m4
 /ar-lib
@@ -20,3 +22,5 @@ Makefile
 /docs
 /install-sh
 /missing
+/test-driver
+/ylwrap

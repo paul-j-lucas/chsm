@@ -1,12 +1,12 @@
 .\"
 .\"     CHSM Language System
-.\"     chsmc.1 -- CHSM-to-C++ compiler driver script manual page
+.\"     chsmc.1 -- CHSM compiler manual page
 .\"
-.\"     Copyright (C) 1996-2013  Paul J. Lucas & Fabio Riccardi
+.\"     Copyright (C) 1996-2018  Paul J. Lucas & Fabio Riccardi
 .\"
 .\"     This program is free software; you can redistribute it and/or modify
 .\"     it under the terms of the GNU General Public License as published by
-.\"     the Free Software Foundation; either version 2 of the License, or
+.\"     the Free Software Foundation; either version 3 of the License, or
 .\"     (at your option) any later version.
 .\"     
 .\"     This program is distributed in the hope that it will be useful,
@@ -15,12 +15,11 @@
 .\"     GNU General Public License for more details.
 .\"     
 .\"     You should have received a copy of the GNU General Public License
-.\"     along with this program; if not, write to the Free Software
-.\"     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .\"
-.TH \f3chsmc\f1 1 "January 21, 2010" "CHSM" "CHSM Language System"
+.TH \f3chsmc\fP 1 "January 18, 2018" "CHSM" "CHSM Language System"
 .SH NAME
-chsmc \- CHSM-to-C++ compiler driver script
+chsmc \- CHSM compiler
 .SH SYNOPSIS
 .B chsmc
 [
@@ -29,195 +28,135 @@ chsmc \- CHSM-to-C++ compiler driver script
 .I source-file
 .SH DESCRIPTION
 .B chsmc
-is the front-end to the
-Concurrent Hierarchical Finite State Machine compiler for C++.
-The command uses 
-.BR chsm2c++ (1)
-for syntax checking, type checking, intermediate C++ code generation
-and a C++ compiler for code generation.
-.PP
-When produced, an executable file has the name \f(CWa.out\f1 unless the 
-.B \-o
-option is used.
-.PP
-For the CHSM source file, \f2source\f(CW.chsmc\f1,
+is the Concurrent Hierarchical Finite State Machine (CHSM) compiler
+that compiles a CHSM specification
+into a target language,
+either C++ or Java.
+The specification may be annotated with target language code fragments
+in the tradition of yacc grammars with C code fragments.
+.SH LANGUAGE
+.SS C++
+For a CHSM-C++ source file,
+.IR source \f(CW.chsmc\fP,
 .B chsmc
-creates two temporary files,
-\f2source\f(CW.h\f1 and \f2source\f(CW.c\f1,
-containing the generated C++ code in the current directory for subsequent
-compilation with a C++ compiler.
-The
-.B \-k
-(keep) option preserves the files.
-.SH OPTIONS
-Options begin with a `\f(CW-\f1' for short options.
-In addition to the options described below,
-.B chsmc
-accepts other options via the
-.B \-O
-option and passes them on to the C++ compilation system tools.
-See
-.BR cpp (1)
-for preprocessor options,
-your C++ compiler manual page for C++ compiler options,
-.BR ld (1)
-for link editor options, and
-.BR as (1)
-for assembler options.
-.PP
-Unlike some other compilation tools, options supplied to
-.B chsmc
-are
-.IR position-independent .
-The following options apply to the CHSM-specific parts of the compilation
-process:
-.TP 14
-.B \-c
-Passed to the C++ compiler to suppress linking with
-.BR ld (1)
-and just produce a \f(CW.o\f1 file.
-This option renders the 
-.B \-l
+by default creates two files,
+.IR source \f(CW.h\fP
 and
-.B \-L
-options useless.
+.IR source \f(CW.cpp\fP,
+containing the generated C++ code in the current directory
+to be subsequently compiled with a C++ compiler.
+.SS Java
+For a CHSM-Java source file,
+.IR source \f(CW.chsmj\fP,
+.B chsmc
+by default creates one file,
+.IR source \f(CW.java\fP,
+containing the generated Java code in the current directory
+to be subsequently compiled with a Java compiler.
+.SH OPTIONS
+An option argument
+.I f
+means
+.I file
+and
+.I s
+means
+.IR string .
+.TP 4
+.B \-c
+(C++ only.)
+Same as
+\f(CW\-\-definition\fP
+or
+\f(CW-D\fP;
+implies \f(CW\-\-language=c++\fP.
 .TP
-\f3\-D\f2name\f1[\f2=def\f1]
-Passed to the C++ compiler to define a symbol name for
-.BR cpp (1).
+.BI \-\-declaration \f1=\fPf "\f1 | \fP" "" \-d " f"
+Explicitly sets the declaration file name to
+.IR f .
 .TP
-.B \-E
-Run only
-.BR chsm2c++ (1)
-on the CHSM source file and send the result to standard output.
+.BI \-\-definition \f1=\fPf "\f1 | \fP" "" \-D " f"
+(C++ only.)
+Explicitly sets the definition file name to
+.IR f .
 .TP
-.B \-g
-Passed to the C++ compiler to produce additional symbol-table information
-used for C++ source debuggers.
+.B \-h
+(C++ only.)
+Same as
+\f(CW\-\-declaration\fP
+or
+\f(CW-d\fP;
+implies \f(CW\-\-language=c++\fP.
 .TP
-.B \-k
-Leaves the intermediate C++ files in the current directory after the
-compilation process.
+.B \-j
+Same as the
+either
+\f(CW\-\-declaration\fP
+or
+\f(CW-d\fP;
+implies \f(CW\-\-language=java\fP.
 .TP
-.BI \-I directory
-Passed to the C++ compiler to add
-.I directory
-to the list of directories in which to search for \f(CW#include\f1 files for
-.BR cpp (1).
+.BI \-\-language \f1=\fPs "\f1 | \fP" "" \-x " s"
+Explicitly sets the language to generate to
+.I s
+(which is case-insenitive),
+either
+\f(CWC++\fP
+or
+\f(CWJava\fP.
 .TP
-.BI \-l library
-Passed to the C++ compiler to link the resultant C++ object code
-with the library
-.IR library .
+.BR \-\-no-line " | " \-P
+(C++ only.)
+Suppress \f(CW#line\fP directives in the generated C++ code.
 .TP
-.BI \-L directory
-Passed to the C++ compiler to add
-.I directory
-to the list or directories in which to search for libraries for linking using
-.BR ld (1).
+.BR \-\-stdout " | " \-E
+Generate all code to standard output
+instead of producing declaration and definition files.
 .TP
-.B \-n
-No-execute mode.
-Parse the command-line, but do not execute any commands.
+.BR \-\-version " | " \-v
+Prints the version number of
+.BR chsmc (1)
+and exits.
 .TP
-.B \-o
-Passed to the C++ compiler to set the executable output file name.
-.TP
-\f3\-O\f1``,\f2other\f1''
-Pass the comma-separated argument string
-.RI `` other ''
-to the C++ compiler to allow implementation-dependent options to be specified.
-Note the requirement of the initial comma.
-.TP
-.B \-P
-Passed to
-.BR chsm2c++ (1)
-to suppress \f(CW#line\f1 directives in the intermediate C++ files.
-.TP
-.B \-v
-Print the version number of
-.BR chsm2c++ (1)
-and exit.
-.TP
-.B \-V
-Print command-lines for
-.BR chsm2c++ (1)
-and/or the C++ compiler prior to execution.
+.BR \-\-yydebug " | " \-y
+Turns on
+.BR bison (1)
+debugging output
+(if compiled in).
+The additional output is of grammar productions
+as they are being reduced by the parser.
+(This is a debugging aid for developers of
+.B chsmc
+itself.)
 .SH FILES
 .PD 0
 .TP 14
-\f2file\f1\f(CW.chsmc\f1
-chsm-C++ source file
+\f(CWchsm.jar\fP
+Java run-time library.
 .TP
-\f2file\f1\f(CW.h\f1
-intermediate C++ declaration file
+\f(CWlibchsm.a\fP
+C++ run-time library.
 .TP
-\f2file\f1\f(CW.c\f1
-intermediate C++ definition file
+.IR source \f(CW.chsmc\fP
+CHSM-C++ source file
 .TP
-\f2file\f1\f(CW.o\f1
-object file
-.TP
-\f(CWa.out\f1
-default executable output file name
-.TP
-.B chsmc
-CHSM driver shell script
-.TP
-.B chsm2c++
-CHSM compiler
-.TP
-\f(CWlibchsm.a\f1
-CHSM run-time library
+.IR source \f(CW.chsmj\fP
+CHSM-Java source file
 .PD
 .SH ENVIRONMENT
-The following environment variables are set within the
-.B chsmc
-driver script,
-but can be set in the environment to override various settings:
-.TP 14
-\f(CWCC\f1
-The C++ compiler.
-.TP
-\f(CWCCFLAGS\f1
-C++ compiler flags.
-.TP
-\f(CWCCHEXT\f1
-Intermediate C++ declaration file name extension.
-.TP
-\f(CWCCCEXT\f1
-Intermediate C++ definition file name extension.
-.TP
-\f(CWCHSM2CXX\f1
-The CHSM-to-C++ compiler
-.BR chsm2c++ (1).
-.TP
-\f(CWCHSM2CXX_FLAGS\f1
-CHSM-to-C++ compiler flags.
-.TP
-\f(CWCHSM_I\f1
-Auto-specified
-.B \-I
-directive(s).
-Must specify at least where the CHSM include file (\f(CWchsm.h\f1) is.
-.TP
-\f(CWCHSM_L\f1
-Auto-specified
-.B \-L
-directive(s).
-Must specify at least where the CHSM library file (\f(CWlibchsm.a\f1) is.
-.TP
-\f(CWCHSM_l\f1
-Auto-specified
-.B -l
-directive(s).
-Must specify at least the CHSM library file (\f(CWlibchsm.a\f1).
+.TP 6
+.B TMPDIR
+If set,
+the directory for temporary files.
+If unset,
+defaults to \f(CW/tmp\fP.
 .SH SEE ALSO
-.BR chsm2c++ (1),
+.BR bison (1),
 .BR cpp (1),
-.BR as (1),
-.BR ld (1),
-.BR chsm-c++ (4)
+.BR gcc (1),
+.BR yacc (1),
+.BR chsm-c++ (4),
+.BR chsm-java (4)
 .SH DIAGNOSTICS
 The diagnostics produced by
 .B chsmc

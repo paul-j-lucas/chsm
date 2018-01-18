@@ -1,0 +1,106 @@
+/*
+**      CHSM Language System
+**      test/c++/tests/events3.chsmc
+**
+**      Copyright (C) 1996-2018  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 3 of the License, or
+**      (at your option) any later version.
+** 
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+** 
+**      You should have received a copy of the GNU General Public License
+**      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file
+ * Tests that base/derived parameter blocks do not interfere.
+ */
+
+// local
+#include "chsm_cxx_test.h"
+
+// standard
+#include <iostream>
+using namespace std;
+
+static int exit_code = 0;
+
+static int const ALPHA_VALUE = 42;
+static int const BETA_VALUE  = 11;
+
+%%
+///////////////////////////////////////////////////////////////////////////////
+
+chsm my_machine is {
+  event alpha( int value );
+  event<alpha> beta;
+
+  set s(p,q) is {
+    cluster p(a,b) is {
+      state a {
+        alpha -> b %{
+          //
+          // Check that alpha's value should equal beta's and not alpha's.
+          //
+          if ( alpha->value != BETA_VALUE )
+            exit_code = 2;
+        %};
+      }
+      state b;
+    }
+    cluster q(a,b) is {
+      state a {
+        beta -> b %{
+          //
+          // This broadcast of alpha should be ignored because it's already in
+          // progress via beta's inheritance.
+          //
+          alpha( ALPHA_VALUE );
+
+          //
+          // Check that beta's value really was set.
+          //
+          if ( beta->value != BETA_VALUE )
+            exit_code = 3;
+        %};
+      }
+      state b;
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+%%
+
+int main() {
+  my_machine m;
+  m.enter();
+
+#ifdef DEBUG
+  m.debug( CHSM::machine::DEBUG_ALL );
+#endif
+
+  m.beta( BETA_VALUE );
+
+#ifdef DEBUG
+  m.dump_state();
+#endif
+
+  CHSM_TEST( m.active() &&
+    m.s.active() &&
+    m.s.p.active() && !m.s.p.a.active() && m.s.p.b.active() &&
+    m.s.q.active() && !m.s.q.a.active() && m.s.q.b.active()
+  );
+
+  PRINT_RESULT();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// vim:set et sw=2 ts=2 syntax=cpp:

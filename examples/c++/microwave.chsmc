@@ -1,0 +1,278 @@
+/*
+**      CHSM Language System
+**      examples/c++/microwave.chsmc
+**
+**      Copyright (C) 1996-2018  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 3 of the License, or
+**      (at your option) any later version.
+**
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+**
+**      You should have received a copy of the GNU General Public License
+**      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file
+ * Complete program to implement a microwave oven.
+ *
+ * @note This is a "toy" program that exists for pedagogical reasons.
+ */
+
+// CHSM
+#include <chsm.h>
+
+// standard
+#include <cctype>                       /* for toupper() */
+#include <iostream>
+#include <iomanip>
+
+using namespace std;
+
+///////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Contains additional data and member functions for a microwave CHSM.
+ */
+class mw_data : public CHSM::machine {
+public:
+  mw_data( CHSM_MACHINE_ARGS ) : CHSM::machine( CHSM_MACHINE_INIT ),
+    hour_( 12 ), minute_( 0 ) { }
+
+  void display_time() const;
+  void display_timer() const;
+
+  bool ok_time() const {
+    return hour_ >= 1 && hour_ <= 12 && minute_ <= 59;
+  }
+
+protected:
+  int minutes_, seconds_;
+  int power_level_;
+  int hour_, minute_;
+  int old_hour_, old_minute_;
+
+  static void shift_add( int &victim, int amount ) {
+    if ( (victim = victim * 10 + amount) >= 100 )
+      victim %= 100;
+  }
+};
+
+void mw_data::display_time() const {
+  cout << "Time: "
+      << setw( 2 ) << hour_ << ':'
+      << setw( 2 ) << minute_ << endl;
+}
+
+void mw_data::display_timer() const {
+  cout << "Timer: "
+      << setw( 2 ) << minutes_ << ':'
+      << setw( 2 ) << seconds_ << endl;
+}
+
+%%
+///////////////////////////////////////////////////////////////////////////////
+
+chsm<mw_data> microwave is {
+  event Digit( int n );
+
+  set components( mode, display, light ) is {
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    cluster mode( operational, disabled ) is {
+
+      cluster operational( idle, program, cook, set_time ) history {
+        Open -> disabled;
+      } is {
+
+        //
+        // idle state: wait for somebody to come along
+        //
+        state idle {
+          Digit -> program;
+          Minute -> cook %{
+            minutes_ = 1;
+          %};
+          Clock -> set_time;
+        }
+
+        //
+        // program state: set the timer and power-level
+        //
+        cluster program( setting, power ) history {
+          upon enter %{
+            if ( event == Digit ) {
+              //
+              // Initialize the minutes/seconds, but only if the event was
+              // Digit.  (The event could be Close because the user opened then
+              // closed the door that would have exited and then re-entered the
+              // program state resuming from where we left off.)
+              //
+              minutes_ = 0;
+              seconds_ = Digit->n;
+              power_level_ = 100;
+            }
+            display_timer();
+          %}
+          upon exit %{
+            if ( event != Open )
+              ${program}.clear();
+          %}
+
+          Start -> cook;
+          Stop  -> idle;
+        } is {
+          state setting {
+            Digit %{
+              shift_add( minutes_, seconds_ / 10 );
+              shift_add( seconds_, Digit->n );
+              display_timer();
+            %};
+            Power -> power;
+          }
+
+          state power {
+            //
+            // Insist on a greater-than-zero power-level.
+            //
+            Digit[ Digit->n > 0 ] -> setting %{
+              power_level_ = Digit->n * 10;
+              cout << "Power: " << power_level_ << "%\n";
+            %};
+          }
+        }
+
+        //
+        // cook state: cook food
+        //
+        state cook {
+          Done -> idle;
+          Stop -> program;
+          Minute %{
+            ++minutes_;
+            display_timer();
+          %};
+        }
+
+        //
+        // set_time state: set the time-of-day clock
+        //
+        cluster set_time( setting, error ) {
+          upon enter %{
+            if ( event != Close ) {
+              old_hour_ = hour_;
+              old_minute_ = minute_;
+              hour_ = minute_ = 0;
+            }
+            display_time();
+          %}
+          upon exit %{
+            if ( event != Open ) {
+              if ( !ok_time() ) {
+                hour_ = old_hour_;
+                minute_ = old_minute_;
+              }
+              display_time();
+            }
+          %}
+
+          Stop -> idle;
+        } is {
+          state setting {
+            Digit %{
+              shift_add( hour_, minute_/10 );
+              shift_add( minute_, Digit->n );
+              display_time();
+            %};
+            Clock[ ok_time() ] -> idle;
+            Clock[!ok_time() ] -> error %{
+              cout << "Time: EE\n";
+            %};
+          }
+
+          state error;
+        }
+      }
+
+      //
+      // disabled state: the door is open
+      //
+      state disabled { Close -> operational; }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    cluster display( time, not_time ) is {
+
+      state time {
+        enter( mode.operational.program ) -> not_time.counter;
+        enter( mode.operational.set_time.error ) -> not_time.error;
+      }
+
+      cluster not_time( counter, power, error ) {
+        enter( mode.operational.idle ) -> time;
+        enter( mode.operational.cook ) -> counter;
+      } is {
+        state counter { Power -> power; }
+        state power { Digit[ Digit->n > 0 ] -> counter; }
+        state error;
+      }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    cluster light( off, on ) is {
+      state off { enter( mode.operational.cook ) -> on; }
+      state on  { exit ( mode.operational.cook ) -> off; }
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+%%
+
+int main() {
+  cout.fill( '0' );
+  microwave oven;
+  oven.debug( CHSM::machine::DEBUG_ALL );
+  oven.enter();
+
+  while ( !cin.eof() ) {
+    oven.dump_state();
+    //
+    // Simple user-interface just to get events into the machine.
+    //
+    cout << "\nEnter: 0-9, Cloc(K) (M)inute (P)ower "
+            "(O)pen (C)lose (S)tart S(T)op (D)one: ";
+
+    char ch;
+    cin >> ch;
+
+    if ( isdigit( ch ) )
+      oven.Digit( ch - '0' );
+    else
+      switch ( toupper( ch ) ) {
+        case 'K': oven.Clock();  break;
+        case 'M': oven.Minute(); break;
+        case 'P': oven.Power();  break;
+        case 'O': oven.Open();   break;
+        case 'C': oven.Close();  break;
+        case 'S': oven.Start();  break;
+        case 'T': oven.Stop();   break;
+        case 'D': oven.Done();   break;
+        default : cerr << "Invalid input\n";
+      } // switch
+  } // while
+
+  return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// vim:set et sw=2 ts=2 syntax=cpp:

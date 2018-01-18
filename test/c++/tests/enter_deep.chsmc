@@ -1,0 +1,77 @@
+/*
+**      CHSM Language System
+**      test/c++/tests/enter_deep.chsmc
+**
+**      Copyright (C) 1996-2018  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 3 of the License, or
+**      (at your option) any later version.
+** 
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+** 
+**      You should have received a copy of the GNU General Public License
+**      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file
+ * Tests that entering a state nested deeply in a cluster directly really
+ * enters that state.
+ */
+
+// local
+#include "chsm_cxx_test.h"
+
+// standard
+#include <iostream>
+using namespace std;
+
+static int exit_code = 0;
+
+%%
+///////////////////////////////////////////////////////////////////////////////
+
+chsm my_machine is {
+  state a {
+    alpha -> x.y.c;
+  }
+  cluster x(a,y) is {
+    state a;
+    cluster y(b,c) is {
+      state b;
+      state c;
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+%%
+
+int main() {
+  my_machine m;
+  m.enter();
+
+#ifdef DEBUG
+  m.debug( CHSM::machine::DEBUG_ALL );
+#endif
+
+  m.alpha();
+
+#ifdef DEBUG
+  m.dump_state();
+#endif
+
+  CHSM_TEST( m.active() &&
+    !m.a.active() && m.x.active() && m.x.y.active() && m.x.y.c.active()
+  );
+
+  PRINT_RESULT();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// vim:set et sw=2 ts=2 syntax=cpp:

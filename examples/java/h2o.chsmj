@@ -1,0 +1,151 @@
+/*
+**      CHSM Language System
+**      src/examples/java/h2o.chsmj
+**
+**      Copyright (C) 2004-2018  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 3 of the License, or
+**      (at your option) any later version.
+**
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+**
+**      You should have received a copy of the GNU General Public License
+**      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file
+ * Complete program to implement a state machine that simulates Petri Nets.
+ *
+ * @note This is a "toy" program that exists for pedagogical reasons.
+ */
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+///////////////////////////////////////////////////////////////////////////////
+
+/**
+ * This class is meant to simulate the behavior of a &quot;place&quot; in Petri
+ * Net terminology.  Places have zero or more tokens at them.
+ */
+class Place extends CHSM.State {
+  public Place( CHSM_STATE_ARGS ) {
+      super( CHSM_STATE_INIT );
+      tokens_ = -1;
+  }
+
+  /**
+   * Gets the value at this place.
+   *
+   * @return Returns said value.
+   */
+  public int value() {
+      return tokens_;
+  }
+
+  /**
+   * Operator to allow the number of tokens to be decrmemented.
+   */
+  public int add( int used ) {
+    return tokens_ -= used + 1;
+  }
+
+  protected boolean enter( CHSM.Event trigger, CHSM.State fromChild ) {
+    //
+    // Call base-class enter() function as required and proceed only if it
+    // returns true.
+    //
+    if ( !super.enter( trigger, fromChild ) )
+      return false;
+    //
+    // Increment the number of tokens for every entrance.
+    //
+    ++tokens_;
+
+    return true;
+  }
+
+  private int tokens_;
+}
+
+class water {
+  public static int molecules = 0;
+}
+
+%%
+///////////////////////////////////////////////////////////////////////////////
+
+chsm MakeWater is {
+  set H2O( H2, O2 ) {
+    //
+    // The conditions might seem to be off by one for hydrogen on the
+    // transition of hydrogen and similarly for oxygen.  You have to remember
+    // that the transition being triggered itself is either a hydrogen or
+    // oxygen so we have to take that into account.
+    //
+    hydrogen[ ${H2}.value() >= 1 && ${O2}.value() >= 1 ] -> H2O %{
+      ${H2}.add( -1 );
+      ${O2}.add( -1 );
+      water.molecules += 2;
+    %};
+    oxygen[ ${H2}.value() >= 2 ] -> H2O %{
+      ${H2}.add( -2 );
+      water.molecules += 2;
+    %};
+  } is {
+    state<Place> H2 { hydrogen -> H2; }
+    state<Place> O2 { oxygen -> O2; }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+%%
+
+public class h2o {
+  public static void main( String args[] ) {
+    final MakeWater waterMaker = new MakeWater();
+    waterMaker.enter();
+
+    final BufferedReader in =
+      new BufferedReader( new InputStreamReader( System.in ) );
+
+    while ( true ) {
+      System.out.print( "\nEnter: (H)ygrogen (O)xygen: " );
+      System.out.flush();
+
+      String buf;
+      try {
+        buf = in.readLine();
+      }
+      catch ( IOException e ) {
+        return;
+      }
+      if ( buf == null )
+        return;
+      final char ch = buf.charAt(0);
+
+      switch ( Character.toUpperCase( ch ) ) {
+        case 'H': waterMaker.hydrogen(); break;
+        case 'O': waterMaker.oxygen()  ; break;
+        default:
+            System.err.println( "Invalid input" );
+            continue;
+      } // switch
+      System.out.println(
+        "H = " + waterMaker.H2O.H2.value() + ", " +
+        "O = " + waterMaker.H2O.O2.value() + ", " +
+        "water molecules = " + water.molecules
+      );
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// vim:set et sw=2 ts=2 syntax=java:

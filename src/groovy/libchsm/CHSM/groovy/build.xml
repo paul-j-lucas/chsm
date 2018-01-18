@@ -1,0 +1,132 @@
+<!--
+ ! CHSM/Groovy
+ !
+ ! Copyright (C) 2007-2018  Paul J. Lucas & Fabio Riccardi
+ ! All rights reserved.
+ !
+ ! Redistribution and use in source and binary forms, with or without
+ ! modification, are permitted provided that the following conditions are met:
+ !
+ !      1. Redistributions of source code must retain the above copyright
+ !         notice, this list of conditions and the following disclaimer.
+ !
+ !      2. Redistributions in binary form must reproduce the above copyright
+ !         notice, this list of conditions and the following disclaimer in the
+ !         documentation and/or other materials provided with the distribution.
+ !
+ !      3. The names of its contributors may not be used to endorse or promote
+ !         products derived from this software without specific prior written
+ !         permission.
+ !
+ ! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ ! AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ ! IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ! ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ ! LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ ! CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ ! SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ ! INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ ! CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ! ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ ! POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<project name="CHSM/Groovy" default="build">
+
+  <!--===== Properties =====================================================-->
+
+  <property environment="env"/>
+  <property name="jar-file" value="chsm-groovy.jar"/>
+  <property name="javadoc-dir" value="../../javadoc"/>
+  <property name="version" value="1.0"/>
+
+  <path id="3rd-party-classpath">
+    <fileset dir="${env.GROOVY_HOME}/lib">
+      <include name="*.jar"/>
+    </fileset>
+    <fileset dir="../../../../java/libchsm/CHSM">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <!--===== Build ==========================================================-->
+
+  <presetdef name="chsm-groovy.javac">
+    <javac debug="true" includeantruntime="false" source="1.5"
+           classpathref="3rd-party-classpath"/>
+  </presetdef>
+
+  <target name="javac">
+    <mkdir dir="build"/>
+    <chsm-groovy.javac srcdir="." destdir="build"/>
+  </target>
+
+  <target name="jar" depends="javac">
+    <jar jarfile="${jar-file}" basedir="build" includes="CHSM/groovy/*.class"
+         level="9">
+      <manifest>
+        <attribute name="Built-By" value="${user.name}"/>
+        <attribute name="Implementation-Title" value="CHSM/Groovy"/>
+        <attribute name="Implementation-Vendor" value="Paul J. Lucas"/>
+        <attribute name="Implementation-Version" value="${version}"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="build" depends="jar"/>
+
+  <!--===== Test ===========================================================-->
+
+  <target name="test" depends="build">
+    <junit outputtoformatters="false">
+      <classpath>
+        <path refid="3rd-party-classpath"/>
+        <pathelement path="build"/>
+      </classpath>
+      <formatter usefile="false" type="plain"/>
+      <sysproperty key="groovy.test.dir" value="tests"/>
+      <sysproperty key="groovy.test.pattern" value="*.groovy"/>
+      <test name="groovy.util.AllTestSuite"/>
+    </junit>
+  </target>
+
+  <!--===== Javadoc ========================================================-->
+
+  <target name="javadoc">
+    <mkdir dir="${javadoc-dir}"/>
+    <javadoc destdir="${javadoc-dir}"
+             classpathref="3rd-party-classpath"
+             failonerror="true"
+             doctitle="CHSM/Groovy" windowtitle="CHSM/Groovy">
+      <packageset dir="../..">
+        <include name="CHSM/groovy"/>
+      </packageset>
+      <link href="http://groovy-lang.org/gdk.html"/>
+      <link href="http://docs.oracle.com/javase/1.5.0/docs/api/"/>
+      <bottom>
+        <![CDATA[
+          <small>
+            Copyright &copy; 2007-2018 by
+            Paul J. Lucas and Fabio Riccardi
+            <br/>
+            CHSM/Groovy is available under a
+            <a href="http://www.opensource.org/licenses/bsd-license.php" target="_new">
+            BSD license</a>.
+          </small>
+        ]]>
+      </bottom>
+    </javadoc>
+  </target>
+
+  <!--===== Clean up =======================================================-->
+
+  <target name="clean">
+    <delete dir="build"/>
+  </target>
+
+  <target name="distclean" depends="clean">
+    <delete file="${jar-file}"/>
+    <delete dir="${javadoc-dir}"/>
+  </target>
+</project>
+<!-- vim:set et sw=2 ts=2: -->

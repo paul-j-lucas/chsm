@@ -1,0 +1,1729 @@
+/*
+**      CHSM Language System
+**      src/c++/chsmc/parser.ypp
+**
+**      Copyright (C) 1996-2018  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 3 of the License, or
+**      (at your option) any later version.
+**
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+**
+**      You should have received a copy of the GNU General Public License
+**      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+%{
+
+// local
+#include "config.h"                     /* must go first */
+#include "child_info.h"
+#include "chsm_info.h"
+#include "chsm_compiler.h"
+#include "cluster_info.h"
+#include "compiler_util.h"
+#include "cpp_generator.h"
+#include "event_info.h"
+#include "global_info.h"
+#include "lexer.h"
+#include "mangle.h"
+#include "options.h"
+#include "semantic.h"
+#include "set_info.h"
+#include "state_info.h"
+#include "transition_info.h"
+#include "user_event_info.h"
+
+// standard
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <unistd.h>                     /* for unlink(2) */
+
+#ifdef ENABLE_STACK_DEBUG
+# define DUMP(S)                  dump( S )
+#else
+# define DUMP(S)                  /* nothing */
+#endif /* ENABLE_STACK_DEBUG */
+
+#define PUSH(X)                   push_line( (X), __LINE__ )
+
+#define PUSH_STRING(S) \
+  BLOCK( char const *const s_tmp = (S); PUSH( s_tmp ); DUMP( s_tmp ); )
+
+#define PUSH_SYMBOL(S) BLOCK( \
+  PJL::symbol *const s_tmp = (PJL::symbol*)(S); PUSH( s_tmp ); DUMP( s_tmp ); )
+
+#define POP(X)                    pop_line( (X), __LINE__ )
+#define POP_INT(VAR)              int VAR; POP( VAR )
+#define POP_STRING(VAR)           POP_PTR( char, VAR ); DUMP( VAR );
+#define POP_SYMBOL(VAR)           POP_PTR( PJL::symbol, VAR ); DUMP( VAR );
+
+#define POP_PTR(TYPE,VAR) \
+  TYPE *VAR; BLOCK( void *p_tmp; POP( p_tmp ); VAR = (TYPE*)p_tmp; )
+
+#define POP_TYPE(TYPE,VAR) \
+  TYPE VAR; BLOCK( POP_INT( t_tmp ); VAR = (TYPE)t_tmp; )
+
+#define PEEK(X,DEPTH)             peek_line( X, __LINE__, (DEPTH) )
+#define PEEK_INT(VAR,DEPTH)       int VAR; PEEK( VAR, (DEPTH) )
+
+#define PEEK_PTR(TYPE,VAR,DEPTH)  \
+  TYPE *VAR; BLOCK( void *p_tmp; PEEK( p_tmp, DEPTH ); VAR = (TYPE*)p_tmp; )
+
+#define PEEK_SYMBOL(VAR,DEPTH) \
+  PEEK_PTR( PJL::symbol, VAR, DEPTH ); DUMP( VAR )
+
+#define PEEK_TYPE(TYPE,VAR,DEPTH) \
+  TYPE VAR; BLOCK( PEEK_INT( t_tmp, (DEPTH) ); VAR = (TYPE)t_tmp; )
+
+#define TOP_INT(VAR)              PEEK_INT( VAR, 0 )
+#define TOP_PTR(TYPE,VAR)         PEEK_PTR( TYPE, VAR, 0 )
+#define TOP_SYMBOL(VAR)           PEEK_SYMBOL( VAR, 0 )
+#define TOP_TYPE(TYPE,VAR)        PEEK_TYPE( TYPE, VAR, 0 )
+
+///////////////////////////////////////////////////////////////////////////////
+
+using namespace PJL;
+using namespace std;
+
+/**
+ * The dummy state name is used just to put some symbol on the semantic stack
+ * when a syntax error occurs.
+ */
+static symbol   sy_dummy_state;
+
+/**
+ * The cluster symbol that is the outermost one to specify a deep history.
+ */
+static symbol  *sy_outer_deep_;
+
+/**
+ * The symbol of the current parent state.
+ */
+static symbol  *sy_parent;
+
+////////// local functions ////////////////////////////////////////////////////
+
+#ifdef ENABLE_STACK_DEBUG
+/**
+ * Dumps a string to the output file being generated.  The string is dumped
+ * inside a comment.
+ *
+ * @param s The string to be dumped.
+ */
+void dump( char const *s ) {
+  if ( opt_stack_debug ) {
+    cc.target_->out() << "///// string: " << flush;
+    if ( s != nullptr )
+      cc.target_->out() << s;
+    else
+      cc.target_->out() << "(NULL)";
+    cc.target_->out() << endl;
+  }
+}
+
+/**
+ * Dumps a symbol to the output file being generated.  The symbol is dumped
+ * inside a comment.
+ *
+ * @param s The symbol to be dumped.
+ */
+void dump( symbol const *s ) {
+  if ( opt_stack_debug ) {
+    cc.target_->out() << "///// symbol: " << flush;
+    if ( s != nullptr )
+      cc.target_->out() << *s;
+    else
+      cc.target_->out() << "(NIL)";
+    cc.target_->out() << endl;
+  }
+}
+#endif /* ENABLE_STACK_DEBUG */
+
+/**
+ * Prints an additional parsing error message to standard error that continues
+ * from where `yyerror()` left off.
+ *
+ * @return Returns the ostream to emit the elaborated error message to.
+ */
+static ostream& elaborate_error() {
+  cc.source_->check_only();
+  if ( cc.error_newlined )
+    return cc.dev_null;
+  cerr << ": ";
+  if ( lexer::get().token[0] )
+    cerr << '"' << lexer::get().token << "\": ";
+  cerr << endl;
+  cc.error_newlined = true;
+  return cerr;
+}
+
+/**
+ * Prints a parsing error message to standard error.  This function is called
+ * directly by Bison to print just `syntax error` (usually).
+ *
+ * @note A newline is \e not printed since the error message will be appended
+ * to by `elaborate_error()`.  For example, the parts of an error message are
+ * printed by the functions shown:
+ *
+ *      42: syntax error: "int": "into" expected
+ *      |--||----------||----------------------|
+ *      |   |           |
+ *      |   yyerror()   elaborate_error()
+ *      |
+ *      print_loc()
+ *
+ * @param msg The error message to print.
+ */
+static void yyerror( char const *msg ) {
+  if ( !cc.error_newlined )
+    cerr << '\n';
+  cc.source_->error() << msg;
+  cc.error_newlined = false;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+/// @cond DOXYGEN_IGNORE
+
+%}
+
+        /* keywords -- in alphabetical order */
+%token  Y_CHSM
+%token  Y_CLUSTER
+%token  Y_DEEP
+%token  Y_ENTER
+%token  Y_EVENT
+%token  Y_EXIT
+%token  Y_HISTORY
+%token  Y_IN
+%token  Y_IS
+%token  Y_PARAM
+%token  Y_SET
+%token  Y_STATE
+%token  Y_UPON
+
+        /* C++ keywords for declarations */
+%token  Y_CONST
+%token  Y_VOLATILE
+
+%token  Y_FINAL
+%token  Y_PUBLIC
+
+        /* punctuation */
+%token  ',' ';'
+%token  '$'                             /* used in embedded C++ code */
+%token  Y_2PERCENT                "%%"
+%token  Y_ARROW                   "->"
+%token  Y_DOTS                          /* \.+ */
+%token  Y_LCODE                   "%{"
+%token  Y_RCODE                   "%}"
+%right  '&'                             /* C++ reference */
+%right  '*'                             /* C++ pointer */
+%right  Y_2AMPERSAND                    /* C++ rvalue reference */
+%left   Y_2COLON_STAR                   /* C++ pointer-to-member */
+%left   '[' ']'
+%left   Y_LOWER_THAN_2COLON             /* bogus: eliminates a shift/reduce */
+%left   Y_2COLON                  "::"  /* C++ scope resolution */
+%token  '(' ')' '{' '}' '<' '>'
+
+        /* other */
+
+%token  Y_IDENTIFIER
+%token  Y_SUBSTATES                     /* (\.s)+ */
+%token  Y_ERROR
+
+%%
+
+/*****************************************************************************
+ *  Preamble
+ *****************************************************************************/
+/*
+  There is a notation used at the beginning of some productions, e.g.:
+
+      state_sym -> ---
+
+  The stuff on the left of the -> is what is expected to already exist on the
+  semantic stack; the stuff on the right is what is left on the semantic stack
+  after the production completes.  What may be on the stack to the left of the
+  left-most item is irrelevant with respect to the current production.  A "---"
+  means "empty stack."
+
+  Additionally:
+
+      Items ending in:    Are of type:
+      ---------------     -----------
+      _sym                symbol*
+      ?                   bool
+      (nothing)           int (usually)
+
+  Productions not having any of the above notation don't use the semantic stack
+  at all.
+*/
+
+/*****************************************************************************/
+/*  CHSM and descriptions                                                    */
+/*****************************************************************************/
+
+chsm
+  : "%%"
+    chsm_description
+    {
+      cc.check_states_defined();
+      cc.check_events_used();
+      cc.check_transitions();
+      if ( cc.source_->errors_ == 0 ) {
+        //
+        // There were no errors: emit the C++ code.
+        //
+        cc.backpatch_enter_exit_events();
+        cc.code_gen_->emit();
+      }
+      else {
+        //
+        // There were errors: blow away target file, if any.
+        //
+        if ( !opt_codegen_only )
+          ::unlink( cc.target_->path().c_str() );
+      }
+    }
+    the_end_opt
+
+  | error
+    {
+      elaborate_error() << "no \"%%\" ever encountered";
+    }
+  ;
+
+chsm_description
+    /*
+    ** derived_class(char*) chsm_sym -> ---
+    */
+  : public_opt Y_CHSM derived_class_spec_opt identifier
+    {
+      POP_SYMBOL( sy_identifier );
+      POP_STRING( derived );
+      POP_TYPE( bool, is_public );
+      sy_identifier->insert_info(
+        new chsm_info(
+          //
+          // Place "root" in the symbol table so the user can't declare states
+          // of the same name.
+          //
+          &cc.sym_table_[ "root" ], derived
+        )
+      );
+      cc.sy_chsm_ = sy_identifier;
+      PUSH_SYMBOL( cc.sy_chsm_ );
+      PUSH( static_cast<param_data*>( CHSM ) );
+    }
+    argument_list_opt
+    {
+      POP_PTR( param_data, pd );
+      if ( pd->param_list_.size() && CHSM->derived_.empty() )
+        cc.source_->error() << "parameters allowed only for derived CHSMs\n";
+      POP_SYMBOL( sy_junk );
+      PUSH_SYMBOL( SY_ROOT );
+    }
+    history_opt
+    {
+      POP_TYPE( bool, history );
+      //
+      // The states in the outer-most scope of a CHSM have cluster semantics.
+      //
+      SY_ROOT->insert_info( new cluster_info( 0, 0, history ) );
+    }
+    enter_exit_action_spec_opt body
+
+  | public_opt Y_CHSM error
+    {
+      elaborate_error() << "chsm name expected";
+    }
+
+  | error
+    {
+      elaborate_error() << "\"chsm\" expected";
+    }
+  ;
+
+public_opt
+    /*
+    ** -> public?
+    */
+  : /* empty */
+    {
+      PUSH( false );
+    }
+  | Y_PUBLIC
+    {
+      if ( opt_lang == lang::JAVA ) {
+        PUSH( true );
+      }
+      else {
+        cc.source_->warning() << "\"public\" is Java-only; ignored\n";
+        PUSH( false );
+      }
+    }
+  ;
+
+enter_exit_action_spec_opt
+  : /* empty */
+  | '{' enter_exit_action_list_opt '}'
+    {
+      yyerrok;
+    }
+  ;
+
+body
+    /*
+    ** new_parent_sym -> ---
+    */
+  : Y_IS lbrace_expected
+    {
+      POP_SYMBOL( sy_new_parent );
+      PUSH_SYMBOL( sy_parent );
+      sy_parent = sy_new_parent;
+      cc.sym_table_.open_scope();
+    }
+    description_list_opt
+    '}'
+    {
+      cc.check_child_states_defined();
+      cc.sym_table_.close_scope();
+
+      if ( sy_parent == sy_outer_deep_ ) {
+        //
+        // This is the outer-most cluster that specified a deep history; it's
+        // going out of scope, so we have to turn off "deepness."
+        //
+        sy_outer_deep_ = nullptr;
+      }
+      POP_SYMBOL( sy_old_parent );
+      sy_parent = sy_old_parent;
+    }
+
+  | error
+    {
+      elaborate_error() << "\"is\" expected";
+    }
+  ;
+
+description_list_opt
+  : /* empty */
+  | description_list_opt description
+  ;
+
+description
+  : state_description
+  | cluster_description
+  | set_description
+  | event_description
+  | error
+    {
+      elaborate_error() << "description expected";
+    }
+  ;
+
+the_end_opt
+  : /* empty */
+  | "%%"
+  ;
+
+/*****************************************************************************/
+/*  state, cluster, and set descriptions                                     */
+/*****************************************************************************/
+
+state_description
+    /*
+    ** derived_class(char*) state_sym -> ---
+    */
+  : Y_STATE state_declaration
+    {
+      POP_SYMBOL( sy_state );
+      POP_STRING( derived );
+      if ( cc.not_exists( sy_state ) )
+        sy_state->insert_info( new state_info( sy_parent, derived ) );
+      PUSH_SYMBOL( sy_state );
+    }
+    state_transition_spec
+    {
+      POP_SYMBOL( sy_state );
+    }
+  ;
+
+cluster_description
+    /*
+    ** derived_class(char*) cluster_sym history? -> ---
+    */
+  : Y_CLUSTER state_declaration child_declaration history_opt
+    {
+      POP_TYPE( bool, history );
+      POP_SYMBOL( sy_cluster );
+      POP_STRING( derived );
+      if ( cc.not_exists( sy_cluster ) ) {
+        sy_cluster->insert_info(
+          new cluster_info(
+            sy_parent, derived,
+            //
+            // This cluster has a history either if a history was explicity
+            // specified for it or it is nested inside a cluster that has a
+            // deep history.
+            //
+            history || sy_outer_deep_ != nullptr
+          )
+        );
+      }
+      PUSH_SYMBOL( sy_cluster );
+    }
+    parent_transition_spec_opt body
+  ;
+
+history_opt
+    /*
+    ** -> history?
+    */
+  : /* empty */
+    {
+      PUSH( false );
+    }
+
+  | deep_opt Y_HISTORY
+    {
+      PUSH( true );
+    }
+  ;
+
+deep_opt
+    /*
+    ** cluster_sym -> cluster_sym
+    */
+  : /* empty */
+  | Y_DEEP
+    {
+      if ( sy_outer_deep_ == nullptr ) {
+        TOP_SYMBOL( sy_cluster );
+        //
+        // Remember this cluster as being the outermost one that specified a
+        // deep history so that we can turn off the "deepness" when this
+        // cluster goes out of scope.
+        //
+        sy_outer_deep_ = sy_cluster;
+      }
+    }
+  ;
+
+set_description
+    /*
+    ** derived_class(char*) set_sym -> ---
+    */
+  : Y_SET state_declaration child_declaration
+    {
+      POP_SYMBOL( sy_set );
+      POP_STRING( derived );
+      if ( cc.not_exists( sy_set ) )
+        sy_set->insert_info( new set_info( sy_parent, derived ) );
+      PUSH_SYMBOL( sy_set );
+    }
+    parent_transition_spec_opt body
+  ;
+
+/*****************************************************************************/
+/*  state declaration                                                        */
+/*****************************************************************************/
+
+state_declaration
+    /*
+    ** ident_sym -> state_sym
+    */
+  : derived_class_spec_opt identifier
+    {
+      POP_SYMBOL( sy_identifier );
+      string name;
+      if ( sy_parent != SY_ROOT ) {
+        name = sy_parent->name();
+        name += string( "." ) + sy_identifier->name();
+        //
+        // Make sure the identifier was declared as a child and that it's a
+        // child of the current parent.
+        //
+        if ( type_check( sy_identifier, TYPE(CHILD), MUST_EXIST,
+                         "in state declaration" ) ) {
+          child_info *const child = INFO( child, sy_identifier );
+          if ( child->sy_parent_ == sy_parent ) {
+            //
+            // This child is a child of the current parent: Mark this declared
+            // child as having been defined.
+            //
+            child->defined_ = true;
+          }
+          else {
+            cc.source_->error()
+              << type_string( sy_identifier )
+              << " \"" << sy_identifier->name()
+              << "\" is not a child of \""
+              << sy_parent->name() << "\"\n";
+          }
+        }
+      }
+      else {
+        //
+        // We're at scope-level zero.
+        //
+        name = sy_identifier->name();
+      }
+
+      symbol &new_state = cc.sym_table_[ name ];
+
+      if ( (type_of( new_state ) & TYPE(GLOBAL)) != TYPE(NONE) ) {
+        //
+        // This state was forward-referenced; since it's about to get its real
+        // info, delete the dummy.
+        //
+        new_state.delete_info();
+      }
+      //
+      // Add the state to the queue of states to remember the declaration order
+      // (if we haven't seen it before).
+      //
+      if ( !new_state.info() ) {
+        CHSM->states_.push_back( &new_state );
+        if ( (type_of( sy_parent ) & TYPE(PARENT)) != TYPE(NONE) ) {
+          //
+          // This symbol was already typechecked and, if of the wrong type, an
+          // error message was issued; but, we still have to check here so we
+          // don't try to use a symbol of the wrong type.
+          //
+          // If it really is a parent, add this child to its parent's list of
+          // child states.
+          //
+          INFO( parent, sy_parent )->children_.push_back( &new_state );
+        }
+      }
+      PUSH_SYMBOL( &new_state );
+    }
+
+  | derived_class_spec_opt error
+    {
+      elaborate_error() << "name expected in state declaration";
+      // clean up as best as possible
+      PUSH_SYMBOL( &sy_dummy_state );
+    }
+  ;
+
+/*****************************************************************************/
+/*  child declaration                                                        */
+/*****************************************************************************/
+
+child_declaration
+  : '(' child_list ')'
+    {
+      yyerrok;
+    }
+
+  | error
+    {
+      elaborate_error() << "child list expected after cluster/set name";
+    }
+  ;
+
+child_list
+  : child
+  | child_list comma_expected child
+  ;
+
+child
+    /*
+    ** parent_sym child_sym -> parent_sym
+    */
+  : identifier
+    {
+      POP_SYMBOL( sy_child );
+      TOP_SYMBOL( sy_parent );
+      //
+      // Check to see that the symbol does not exist as an event; check for
+      // multiply-declared child.
+      //
+      if ( cc.not_exists( sy_child, TYPE(EVENT) )
+           && (type_of( sy_child ) & TYPE(CHILD)) != TYPE(NONE)
+           && INFO_CONST( child, sy_child )->sy_parent_ == sy_parent ) {
+        cc.source_->error()
+          << type_string( sy_child ) << " \"" << sy_child->name()
+          << "\" previously declared\n";
+      }
+      else {
+        sy_child->insert_info( new child_info( sy_parent ) );
+      }
+    }
+
+  | error
+    {
+      elaborate_error() << "child name expected (extra ','?)";
+    }
+  ;
+
+/*****************************************************************************/
+/*  event descriptions                                                       */
+/*****************************************************************************/
+
+event_description
+  : Y_EVENT base_event_spec_opt identifier
+    {
+      POP_SYMBOL( sy_event );
+      POP_SYMBOL( sy_base_event );
+      if ( cc.not_exists( sy_event ) ) {
+        sy_event->insert_info( new user_event_info( sy_base_event ) );
+        CHSM->events_.push_back( sy_event );
+      }
+      PUSH( sy_event );
+      PUSH( (param_data*)INFO( user_event, sy_event ) );
+      //
+      // Let the lexical analyzer know that we're doing conditions.
+      //
+      lexer::get().push_state( lexer::TOKENIZE_CONDITION );
+    }
+    argument_list_opt event_precondition_opt semi_expected
+    {
+      yyerrok;
+      lexer::get().pop_state();
+      POP_PTR( param_data, pd );
+      POP_SYMBOL( sy_event );
+    }
+
+  | Y_EVENT error ';'
+    {
+      yyerrok;
+      elaborate_error() << "event name expected";
+    }
+  ;
+
+base_event_spec_opt
+    /*
+    ** -> event_sym
+    */
+  : /* empty */
+    {
+      PUSH_SYMBOL( nullptr );
+    }
+  | '<' base_event '>'
+  | '<' base_event error '>'
+    {
+      yyerrok;
+      elaborate_error() << "error in base event specification";
+    }
+  | '<' error '>'
+    {
+      yyerrok;
+      elaborate_error() << "base event name expected";
+      PUSH_SYMBOL( nullptr );
+    }
+  ;
+
+base_event
+    /*
+    ** -> event_sym
+    */
+  : identifier
+    {
+      TOP_SYMBOL( sy_identifier );
+      //
+      // Check that the event specified for the base event has been declared.
+      //
+      type_check(
+        sy_identifier, TYPE(USER_EVENT), MUST_EXIST,
+        "in base event specification"
+      );
+    }
+  ;
+
+event_precondition_opt
+  : /* empty */
+  | event_precondition_expr
+  | event_precondition_func
+  ;
+
+event_precondition_expr
+    /*
+    ** event_sym param_data* -> event_sym param_data*
+    */
+  : '['
+    {
+      PEEK_SYMBOL( sy_event, 1 );
+      user_event_info *const user_event = INFO( user_event, sy_event );
+      user_event->precondition_ = user_event_info::PRECONDITION_EXPR;
+      cc.code_gen_->emit_precondition_expr_begin( sy_event );
+    }
+    embedded_identifier_list_opt ']'
+    {
+      cc.code_gen_->emit_precondition_expr_end();
+    }
+  ;
+
+event_precondition_func
+    /*
+    ** event_sym -> event_sym
+    */
+  : "%{"
+    {
+      yyerrok;
+      PEEK_SYMBOL( sy_event, 1 );
+      user_event_info *const user_event = INFO( user_event, sy_event );
+      user_event->precondition_ = user_event_info::PRECONDITION_FUNC;
+      cc.code_gen_->emit_precondition_func_begin( sy_event );
+    }
+    embedded_identifier_list_opt "%}"
+    {
+      PEEK_SYMBOL( sy_event, 1 );
+      cc.code_gen_->emit_precondition_func_end( sy_event );
+    }
+  ;
+
+/*****************************************************************************/
+/*  transitions                                                              */
+/*****************************************************************************/
+
+state_transition_spec
+  : transition_spec
+  | semi_expected                       /* for a "sink" state */
+  ;
+
+parent_transition_spec_opt
+  : /* empty */
+  | transition_spec
+  ;
+
+transition_spec
+  : '{' enter_exit_action_list_opt transition_list_opt '}'
+    {
+      yyerrok;
+    }
+  ;
+
+transition_list_opt
+  : /* empty */
+  | transition_list_opt transition
+  ;
+
+transition
+  : /* empty */
+    {
+      PUSH( 0 ); // number of events in event_condition_list
+    }
+    /*
+    ** from_state_sym { event_sym condition_id }... num_events to_state_sym
+    **      target_id action_id -> ---
+    */
+    event_condition_list transition_type semi_expected
+    {
+      yyerrok;
+      POP_INT( action_id );
+      POP_INT( target_id );
+      POP_SYMBOL( sy_to_state );
+      POP_INT( num_events );
+      PEEK_SYMBOL( sy_from_state, 2 * num_events );
+
+      while ( num_events-- ) {
+        POP_INT( condition_id );
+        CHSM->transitions_.push_back(
+          new symbol( "",
+            new transition_info(
+              condition_id, sy_from_state, sy_to_state, target_id, action_id
+            )
+          )
+        );
+        POP_SYMBOL( sy_event );
+        if ( (type_of( sy_event ) & TYPE(EVENT)) == TYPE(NONE) ) {
+          //
+          // This symbol was already typechecked and, if of the wrong type, an
+          // error message was issued; but, we still have to check here so we
+          // don't try to use a symbol of the wrong type.
+          //
+          continue;
+        }
+        event_info &info = *INFO( event, sy_event );
+        info.transition_ids_.push_back( CHSM->transitions_.size() - 1 );
+        info.used_ = true;
+      } // while
+    }
+  ;
+
+transition_type
+    /*
+    ** -> state_sym target_id action_id
+    */
+  : "->"
+    {
+      //
+      // Let the lexical analyzer know that we're doing conditions.
+      //
+      lexer::get().push_state( lexer::TOKENIZE_CONDITION );
+    }
+    transition_target
+    {
+      lexer::get().pop_state();
+    }
+    action_block_opt
+
+  | action_block
+    {
+      POP_INT( action_id );
+      PUSH_SYMBOL( nullptr );           // no "to" state
+      PUSH( 0 );                        // no target function
+      PUSH( action_id );
+    }
+  ;
+
+transition_target
+    /*
+    ** -> state_sym target_id
+    */
+  : state_name
+    {
+      PUSH( 0 );                        // no target function
+    }
+
+  | '['
+    {
+      ++CHSM->id_.target_;
+      cc.code_gen_->emit_transition_target_begin();
+      PUSH_SYMBOL( nullptr );           // no "to" state
+      PUSH( CHSM->id_.target_ );
+    }
+    embedded_identifier_list_opt ']'
+    {
+      cc.code_gen_->emit_transition_target_end();
+    }
+
+  | error
+    {
+      elaborate_error() << "state name or expression expected";
+    }
+  ;
+
+event_condition_list
+    /*
+    ** 0 -> { event_sym condition_id }... num_events
+    */
+  : event_condition_spec
+  | event_condition_list comma_expected event_condition_spec
+    {
+      yyerrok;
+    }
+  ;
+
+event_condition_spec
+    /*
+    ** num_events -> event_sym condition_id num_events+1
+    */
+  : event_name
+    {
+      //
+      // Let the lexical analyzer know that we're doing conditions.
+      //
+      lexer::get().push_state( lexer::TOKENIZE_CONDITION );
+    }
+    event_condition_opt
+    {
+      lexer::get().pop_state();
+      POP_INT( condition_id );
+      POP_SYMBOL( sy_event );
+      POP_INT( n );
+      PUSH_SYMBOL( sy_event );
+      PUSH( condition_id );
+      PUSH( n+1 );
+    }
+
+  | error
+    {
+      elaborate_error() << "event expected in transition";
+    }
+  ;
+
+event_condition_opt
+    /*
+    ** -> condition_id
+    */
+  : /* empty */
+    {
+      PUSH( 0 );                        // no condition
+    }
+
+  | '['
+    {
+      ++CHSM->id_.condition_;
+      cc.code_gen_->emit_condition_expr_begin();
+      PUSH( CHSM->id_.condition_ );
+    }
+    embedded_identifier_list_opt ']'
+    {
+      cc.code_gen_->emit_condition_expr_end();
+    }
+  ;
+
+/*****************************************************************************/
+/*  enter/exit actions                                                       */
+/*****************************************************************************/
+
+enter_exit_action_list_opt
+  : /* empty */
+  | enter_exit_action_list_opt enter_exit_action
+  ;
+
+enter_exit_action
+    /*
+    ** state_sym prefix(char*) -> state_sym
+    */
+  : Y_UPON enter_or_exit "%{"
+    {
+      yyerrok;
+      POP_PTR( char, kind );
+      TOP_SYMBOL( sy_state );
+      bool const is_enter = !::strcmp( kind, chsm_info::PREFIX_ENTER );
+      state_info &info = *INFO( state, sy_state );
+      state_info::actions &action = info.action_;
+      bool &has_enex = is_enter ? action.has_enter_ : action.has_exit_;
+      if ( !has_enex ) {
+        cc.code_gen_->emit_enter_exit_begin( kind, sy_state );
+        has_enex = true;
+      } else {
+        cc.source_->error()
+          << (is_enter ? "enter" : "exit")
+          << " action already specified for "
+          << sy_state->name() << '\n';
+      }
+    }
+    embedded_identifier_list_opt "%}"
+    {
+      cc.code_gen_->emit_enter_exit_end();
+    }
+
+  | Y_UPON error
+    {
+      elaborate_error() << "\"enter\" or \"exit\" expected after \"upon\"";
+    }
+    "%{" /* ... */ "%}"
+  ;
+
+/*****************************************************************************/
+/*  state names                                                              */
+/*****************************************************************************/
+
+state_name
+    /*
+    ** depth ident_sym substates(char*) -> state_sym
+    */
+  : scope_resolver_opt identifier substates_opt
+    {
+      POP_PTR( char, substates );
+      POP_SYMBOL( sy_identifier );
+      POP_INT( dots );
+      string name;
+      switch ( type_of( sy_identifier, dots ) ) {
+        case TYPE(CHILD):
+          //
+          // Easy case: it's a child of some previously-declared state.
+          //
+          name = INFO_CONST( child, sy_identifier )->sy_parent_->name();
+          name += ".";
+          name += sy_identifier->name();
+          break;
+
+        default:
+          //
+          // Something weird...call type_check() to print an error message.
+          //
+          type_check( sy_identifier, TYPE(STATE), MUST_EXIST, "", dots );
+          // FALLTHROUGH
+
+        case TYPE(STATE):
+        case TYPE(CLUSTER):
+        case TYPE(SET):
+          //
+          // Previously-encountered state.
+          //
+          // FALLTHROUGH
+
+        case TYPE(GLOBAL):
+        case TYPE(NONE):
+          //
+          // This is presumeably a forward reference to a state at scope-level
+          // zero.
+          //
+          name = sy_identifier->name();
+          break;
+      } // switch
+
+      //
+      // Tack on the substates, if given.
+      //
+      name += substates;
+
+      symbol &sy_state = cc.sym_table_[ name ];
+      if ( sy_state.info() == nullptr ) {
+        //
+        // This is presumeably a forward-reference to a state.  Give it dummy
+        // info just so it survives close_scope().
+        //
+        sy_state.insert_info( new global_info );
+      }
+      PUSH_SYMBOL( &sy_state );
+    }
+  ;
+
+scope_resolver_opt
+    /*
+    ** -> num_dots
+    */
+  : /* empty */
+    {
+      PUSH( 0 );
+    }
+
+  | Y_DOTS
+    {
+      size_t dots = ::strlen( lexer::get().token );
+      if ( dots > symbol_table::scope() ) {
+        cc.source_->warning() << "dots exceed current scope-depth\n";
+        dots = symbol_table::scope();
+      }
+      PUSH( dots );
+    }
+
+  | "::"
+    {
+      PUSH( symbol_table::scope() );
+    }
+  ;
+
+substates_opt
+    /*
+    ** -> substates(char*)
+    */
+  : /* empty */
+    {
+      PUSH_STRING( "" );
+    }
+
+  | Y_SUBSTATES
+    {
+      PUSH_STRING( lexer::get().token );
+    }
+  ;
+
+paren_state_name
+    /*
+    ** -> state_sym
+    */
+  : lparen_expected state_name rparen_expected
+  | '(' state_name_error ')'
+    {
+      yyerrok;
+      // clean up as best as possible
+      PUSH_SYMBOL( &sy_dummy_state );
+    }
+  ;
+
+/*****************************************************************************/
+/*  event names                                                              */
+/*****************************************************************************/
+
+event_name
+    /*
+    ** prefix(char*) state_sym -> event_sym
+    */
+  : user_event
+  | enter_or_exit paren_state_name
+    {
+      POP_SYMBOL( sy_state );
+      POP_PTR( char, kind );
+      string name = kind;
+      name += mangle( sy_state->name() );
+      symbol &event = cc.sym_table_[ name ];
+      if ( !event.info() ) {
+        event.insert_info(
+          new event_info(
+            ::strcmp( kind, chsm_info::PREFIX_ENTER ) == 0 ?
+              event_info::KIND_ENTER : event_info::KIND_EXIT,
+            sy_state
+          )
+        );
+        CHSM->events_.push_back( &event );
+      }
+      PUSH_SYMBOL( &event );
+    }
+  ;
+
+user_event
+    /*
+    ** -> event_sym
+    */
+  : identifier
+    {
+      TOP_SYMBOL( sy_event );
+      if ( type_check( sy_event, TYPE(USER_EVENT), NO_INFO ) ) {
+        sy_event->insert_info( new user_event_info );
+        CHSM->events_.push_back( sy_event );
+      }
+    }
+  ;
+
+/*****************************************************************************/
+/*  Argument lists                                                           */
+/*****************************************************************************/
+
+argument_list_opt
+    /*
+    ** This part of the grammar to parse parameter declarations had the C++
+    ** grammar in the ARM for argument declarations, sections 17.3 and 17.4, as
+    ** its base.  There were several modifications and simplifications made to
+    ** allow Bison to be able to parse it unambigously and independent of
+    ** context.
+    **
+    ** One thing we impose is that parameter declarations may not be abstract
+    ** since we need the variable name:
+    **
+    **      event alpha( int );       // illegal
+    **      event alpha( int x );     // better
+    */
+  : /* empty */
+  | '(' ')'
+  | '('
+    {
+      lexer::get().push_state( lexer::TOKENIZE_ARG_LIST );
+    }
+    arg_decl_list ')'
+    {
+      lexer::get().pop_state();
+    }
+  ;
+
+arg_cat
+    /*
+    ** During argument declaration list parsing, we have to reconstruct the
+    ** text of the declaration so it can later be emitted into the generated
+    ** code in user-event paramater declarations.  To do this, we insert a
+    ** "subroutine" production, arg_cat, after every terminal to concatenate
+    ** the text in lexer::get().token to the declaration we're reconstructing.
+    */
+  : /* empty */
+    {
+      cc.arg_.cat( lexer::get().token );
+      cc.arg_.cat( ' ' );
+    }
+  ;
+
+arg_cat_ident
+    /*
+    ** However, we want to extract the identifier of the variable name and
+    ** substitute a '$' marker in its place.  (See the comment in
+    ** user_event_info::definition() for why we need to do this.)  Hence, when
+    ** we're all done, for a declaration such as:
+    **
+    **      T (*const foo)( U )
+    **
+    ** we'll get:
+    **
+    **      declaration: T (*const $)( U )
+    **      variable   : foo
+    **
+    ** To do this, we can't call arc_cat immediately upon getting a
+    ** Y_IDENTIFIER because we can't tell at that level if it's the identifier
+    ** for the variable or not.  Instead, we store the text for a Y_IDENTIFIER
+    ** someplace used only for Y_IDENTs that we can concatenate later further
+    ** along in a production.
+    */
+  : /* empty */
+    {
+      char *const s = cc.arg_.ident_[ cc.arg_.got_variable_ ];
+      if ( *s != '\0' ) {
+        cc.arg_.cat( s );
+        cc.arg_.cat( ' ' );
+        *s = '\0';
+      }
+    }
+  ;
+
+arg_decl_list
+  : arg_decl
+  | arg_decl_list ',' arg_cat arg_decl
+  ;
+
+arg_decl
+    /*
+    ** param_data -> param_data
+    */
+  : {
+      cc.arg_.init( cc.source_->line_no_ );
+    }
+    final_arg_opt decl_specifiers declarator
+    {
+      TOP_PTR( param_data, pd );
+      pd->param_list_.push_back(
+        param_data::param( cc.arg_.line_no_, cc.arg_.decl_, cc.arg_.ident_[0] )
+      );
+    }
+  ;
+
+final_arg_opt
+  : /* empty */
+  | Y_FINAL arg_cat
+    {
+      if ( opt_lang != lang::JAVA )
+        cc.source_->error() << "\"final\" is Java-only\n";
+    }
+  ;
+
+decl_specifiers
+  : decl_specifier
+  | decl_specifiers decl_specifier
+  ;
+
+decl_specifier
+  : complete_class_name
+  | const_or_volatile arg_cat
+  ;
+
+const_or_volatile
+  : Y_CONST
+  | Y_VOLATILE
+  ;
+
+complete_class_name
+  : qualified_class_name arg_cat_ident
+
+    /* C++ only */
+  | "::" arg_cat qualified_class_name arg_cat_ident
+  | "::" error
+    {
+      elaborate_error() << "class name expected after \"::\"";
+    }
+  ;
+
+qualified_class_name
+    /*
+    ** Set explicit precedence to eliminate a shift/reduce conflict.  This case
+    ** parallels the classic if/else conflict.
+    **
+    ** See: "lex & yacc" 2nd edition, O'Reilly & Associates, Inc., ISBN
+    ** 1-56592-000-7, Oct. 1992, p. 234.
+    */
+  : class_name %prec Y_LOWER_THAN_2COLON
+
+  | class_name "::" arg_cat_ident       /* C++ only */
+    {
+      //
+      // Must explicitly append "::" rather than call arg_cat since the lexer's
+      // text is the _next_ token due to lookahead.
+      //
+      cc.arg_.cat( "::" );
+    }
+    qualified_class_name
+
+  | class_name "::" error               /* C++ only */
+    {
+      elaborate_error() << "class name expected after \"::\"";
+    }
+
+  | class_name Y_DOTS arg_cat_ident     /* Java only */
+    {
+      //
+      // Must explicitly append "." rather than call arg_cat since the lexer's
+      // text is the _next_ token due to lookahead.
+      //
+      cc.arg_.cat( "." );
+    }
+    qualified_class_name
+
+  | class_name Y_DOTS error             /* Java only */
+    {
+      elaborate_error() << "class name expected after \".\"";
+    }
+  ;
+
+class_name
+  : decl_identifier template_args_opt
+  ;
+
+decl_identifier
+    /*
+    ** As mentioned above in the comment for arc_cat_ident, store the text of a
+    ** Y_IDENTIFIER seperately.  Once we have the Y_IDENTIFIER for the variable
+    ** in cc.arg_.ident_[0], store all subsequent text for Y_IDENTIFIERSs in
+    ** cc.arg_.ident_[1] so as not to overwrite it.
+    */
+  : Y_IDENTIFIER
+    {
+      ::strcpy( cc.arg_.ident_[ cc.arg_.got_variable_ ], lexer::get().token );
+    }
+  ;
+
+template_args_opt
+    /*
+    ** Since the identifier for the variable name can not possibly be between <
+    ** and > template arguments, let lex reduce all that down to a single token
+    ** thus simplifying the grammar.
+    */
+  : /* empty */
+  | '<' arg_cat_ident arg_cat /* anything */ '>' arg_cat
+  ;
+
+declarator
+    /*
+    ** C++ nested declarators:
+    **      T (d)                       // silly, but legal
+    **      T (*d)( ... )               // pointer to function
+    **
+    ** Note: we do not allow:
+    **
+    **      T d()                       // function declaration
+    */
+  : '(' arg_cat declarator ')' arg_cat sub_arg_decl_list_opt
+
+    /*
+    ** C++ & Java vector declarations:
+    **      T d[ ... ]
+    **
+    ** Similarly to < and > for template arguments, the identifier for the
+    ** variable name can not possibly be between [ and ] vector dimensions;
+    ** therefore, let lex reduce all that down to a single token thus
+    ** simplifying the grammar.
+    */
+  | declarator '[' arg_cat /* anything */ ']' arg_cat
+
+    /*
+    ** C++ pointers:
+    **      T *d
+    */
+  | '*' arg_cat cv_qualifier_list_opt declarator
+
+    /*
+    ** C++ references:
+    **      T &d
+    */
+  | '&' arg_cat cv_qualifier_list_opt declarator
+
+    /*
+    ** C++ rvalue references:
+    **      T &&d
+    */
+  | "&&" arg_cat cv_qualifier_list_opt declarator
+
+    /*
+    ** C++ pointers-to-member:
+    **      T C::*d
+    **
+    ** Note: We cheat by using a single token for this ::{white}*\* to
+    ** eliminate a shift/reduce conflict.  In C++, :: and * are separate
+    ** tokens.  Allowing whitspace between :: and * should cover all cases (we
+    ** hope).
+    */
+  | complete_class_name arg_cat_ident "::" arg_cat
+      cv_qualifier_list_opt declarator
+
+    /*
+    ** Variable name.
+    */
+  | decl_identifier
+    {
+      if ( !cc.arg_.got_variable_ ) {
+        cc.arg_.got_variable_ = true;
+        cc.arg_.cat( '$' );
+      }
+    }
+
+  | error
+    {
+      elaborate_error() << "variable name expected in argument declaration";
+    }
+  ;
+
+sub_arg_decl_list_opt
+  : /* empty */
+  | '(' arg_cat abstract_arg_decl_list_opt ')' arg_cat cv_qualifier_list_opt
+  ;
+
+abstract_arg_decl_list_opt
+  : /* empty */
+  | abstract_arg_decl_list
+  ;
+
+abstract_arg_decl_list
+  : abstract_arg_decl
+  | abstract_arg_decl_list ',' arg_cat abstract_arg_decl
+  ;
+
+abstract_arg_decl
+  : decl_specifiers abstract_declarator
+  ;
+
+abstract_declarator
+    /*
+    ** abstract_declarator is basically the same as declarator except that it
+    ** allows a variable name to be omitted, hence abstract.
+    */
+  : /* empty */
+  | '(' arg_cat abstract_declarator ')' arg_cat
+  | abstract_declarator '[' arg_cat /* anything */ ']' arg_cat
+  | '*' arg_cat cv_qualifier_list_opt abstract_declarator
+  | '&' arg_cat cv_qualifier_list_opt abstract_declarator
+  | "&&" arg_cat cv_qualifier_list_opt abstract_declarator
+  | complete_class_name "::" arg_cat
+      cv_qualifier_list_opt abstract_declarator
+  ;
+
+cv_qualifier_list_opt
+  : /* empty */
+  | cv_qualifier_list
+  ;
+
+cv_qualifier_list
+  : const_or_volatile arg_cat
+  | cv_qualifier_list const_or_volatile arg_cat
+  ;
+
+/*****************************************************************************/
+/*  Miscellaneous                                                            */
+/*****************************************************************************/
+
+identifier
+    /*
+    ** -> ident_sym
+    */
+  : Y_IDENTIFIER
+    {
+      PUSH_SYMBOL( &cc.sym_table_[ lexer::get().token ] );
+    }
+  ;
+
+derived_class_spec_opt
+    /*
+    ** -> derived_class(char*)
+    */
+  : /* empty */
+    {
+      PUSH_STRING( nullptr );
+    }
+
+  | '<'
+    {
+      cc.arg_.init( cc.source_->line_no_ );
+      lexer::get().push_state( lexer::TOKENIZE_ARG_LIST );
+    }
+    complete_class_name '>'
+    {
+      lexer::get().pop_state();
+      PUSH_STRING( cc.arg_.decl_ );
+    }
+
+  | '<' error '>'
+    {
+      yyerrok;
+      elaborate_error() << "derived class expected";
+      PUSH_STRING( nullptr );
+    }
+  ;
+
+embedded_identifier_list_opt
+  : /* empty */
+  | embedded_identifier_list_opt embedded_identifier
+  ;
+
+embedded_identifier
+  : embedded_event_name
+  | embedded_state_name
+  | '$' error
+    {
+      elaborate_error() << "invalid keyword after '$'";
+    }
+  ;
+
+embedded_event_name
+    /*
+    ** event_sym ident_sym -> ---
+    */
+  : '$' Y_PARAM lparen_expected user_event
+    comma_expected identifier rparen_expected
+    {
+      POP_SYMBOL( sy_identifier );
+      POP_SYMBOL( sy_event );
+      // TODO: make language-agnostic
+      U_OUT << sy_event->name() << '.' << sy_event->name() << "Param()."
+            << sy_identifier->name();
+    }
+  | '$' Y_PARAM '(' event_name_error ')'
+    {
+      yyerrok;
+    }
+  ;
+
+embedded_state_name
+    /*
+    ** state_sym -> ---
+    */
+  : '$' '{' state_name rbrace_expected
+    {
+      POP_SYMBOL( sy_state );
+      U_OUT << sy_state->name();
+    }
+
+  | '$' '{' state_name_error '}'
+    {
+      yyerrok;
+    }
+
+  | '$' embedded_keyword lparen_expected state_name rparen_expected
+    {
+      POP_SYMBOL( sy_state );
+      POP_INT( keyword );
+      switch ( keyword ) {
+        case Y_ENTER:
+          POP_PTR( char, kind );
+          U_OUT << kind;
+          // FALLTHROUGH
+        case Y_STATE:
+          U_OUT << mangle( sy_state->name() );
+          break;
+        case Y_IN:
+          U_OUT << sy_state->name() << ".active()";
+          break;
+      } // switch
+    }
+
+  | '$' embedded_keyword '(' state_name_error ')'
+    {
+      yyerrok;
+      POP_INT( junk );
+    }
+  ;
+
+embedded_keyword
+    /*
+    ** -> keyword
+    */
+  : enter_or_exit                 { PUSH( Y_ENTER ); }
+  | Y_IN                          { PUSH( Y_IN ); }
+  | error
+    {
+      elaborate_error() << "invalid keyword after '$'";
+      PUSH( 0 );
+    }
+  ;
+
+action_block_opt
+    /*
+    ** -> action_id
+    */
+  : /* empty */
+    {
+      PUSH( 0 );                        // no block
+    }
+  | action_block
+  ;
+
+action_block
+    /*
+    ** -> action_id
+    */
+  : "%{"
+    {
+      ++CHSM->id_.action_;
+      cc.code_gen_->emit_action_block_begin();
+      PUSH( CHSM->id_.action_ );
+    }
+    embedded_identifier_list_opt "%}"
+    {
+      cc.code_gen_->emit_action_block_end();
+    }
+  ;
+
+enter_or_exit
+    /*
+    ** -> prefix(char*)
+    */
+  : Y_ENTER
+    {
+      PUSH_STRING( chsm_info::PREFIX_ENTER );
+    }
+  | Y_EXIT
+    {
+      PUSH_STRING( chsm_info::PREFIX_EXIT );
+    }
+  ;
+
+/*****************************************************************************/
+/*  Errors                                                                   */
+/*****************************************************************************/
+
+comma_expected
+  : ','
+  | error
+    {
+      elaborate_error() << "',' expected";
+    }
+  ;
+
+event_name_error
+  : error
+    {
+      elaborate_error() << "event name expected";
+    }
+  ;
+
+semi_expected
+  : ';'
+  | error
+    {
+      elaborate_error() << "';' expected";
+    }
+  ;
+
+lparen_expected
+  : '('
+  | error
+    {
+      elaborate_error() << "'(' expected";
+    }
+  ;
+
+rparen_expected
+  : ')'
+  | error
+    {
+      elaborate_error() << "')' expected";
+    }
+  ;
+
+lbrace_expected
+  : '{'
+  | error
+    {
+      elaborate_error() << "'{' expected";
+    }
+  ;
+
+rbrace_expected
+  : '}'
+  | error
+    {
+      elaborate_error() << "'}' expected";
+    }
+  ;
+
+state_name_error
+  : error
+    {
+      elaborate_error() << "state name expected";
+    }
+  ;
+
+%%
+
+///////////////////////////////////////////////////////////////////////////////
+/* vim:set et ts=2 sw=2 syntax=yacc: */

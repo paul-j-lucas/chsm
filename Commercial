@@ -1,7 +1,7 @@
 CHSM GENERAL COMMERCIAL LICENSE
 Version 5, August 2007
 
-Copyright (C) 2005-2013 Paul J. Lucas
+Copyright (C) 2005-2018 Paul J. Lucas
 
 Everyone is permitted to copy and distribute verbatim copies of this license
 document, but changing it is not allowed.
@@ -21,41 +21,37 @@ You may use this version of this License or, at your option, any later version.
   2. Permitted Uses and Restrictions.  This License allows you to incorporate
 CHSM into software developed by you ("your software") as follows:
 
-	a) You may make modifications to CHSM source code and may keep
-	   those modifications proprietary.
+	a) You may make modifications to CHSM source code and may keep those
+	   modifications proprietary.
 
-	b) You may use CHSM in any way, in whole or in part, with or
-	   without modifications, as part of your software.
+	b) You may use CHSM in any way, in whole or in part, with or without
+	   modifications, as part of your software.
 
-	c) Your software may not in any way enable a user to design,
-	   specify, construct, modify, or simulate any form of finite
-	   state automata.
+	c) Your software may not in any way enable a user to design, specify,
+	   construct, modify, or simulate any form of finite state automata.
 
-	d) You may distribute CHSM, in whole or in part, with or
-	   without modifications, in binary form, by any means, with
-	   your software.
+	d) You may distribute CHSM, in whole or in part, with or without
+	   modifications, in binary form, by any means, with your software.
 
-	e) You may license your software, which may include CHSM, in
-	   whole or in part, with or without modifications, in binary
-	   form, under its own license so long as it does not conflict
-	   with this license.
+	e) You may license your software, which may include CHSM, in whole or
+	   in part, with or without modifications, in binary form, under its
+	   own license so long as it does not conflict with this license.
 
-	f) You may distribute CHSM in its entirety, or your
-	   modifications, or both, by any means, in source form;
-	   however, CHSM or your modifications so distributed shall be
-	   under the terms of the GNU General Public License.
+	f) You may distribute CHSM in its entirety, or your modifications, or
+	   both, by any means, in source form; however, CHSM or your
+	   modifications so distributed shall be under the terms of the GNU
+	   General Public License.
 
-	g) All copyright notices displayed by or in documentation for
-	   your software must include the following notice:
+	g) All copyright notices displayed by or in documentation for your
+	   software must include the following notice:
 
-		CHSM (C) 1996-2013 Paul J. Lucas.  All rights reserved.
+		CHSM (C) 1996-2018  Paul J. Lucas.  All rights reserved.
 
-	   You may translate the above notice into another language or
-	   to adhere to local legal requirements where displayed.
+	   You may translate the above notice into another language or to
+	   adhere to local legal requirements where displayed.
 
-	h) You may offer warranty protection for your software that may
-	   include CHSM, in whole or in part, with or without
-	   modifications.
+	h) You may offer warranty protection for your software that may include
+	   CHSM, in whole or in part, with or without modifications.
 
 You may not use, copy, modify, sublicense, or distribute CHSM except as
 expressly provided under this License.  Any attempt otherwise to use, copy,

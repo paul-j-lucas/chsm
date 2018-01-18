@@ -2,11 +2,11 @@
 .\"     CHSM Language System
 .\"     chsm-java.4 -- Language description manual page
 .\"
-.\"     Copyright (C) 2004-2013  Paul J. Lucas & Fabio Riccardi
+.\"     Copyright (C) 2004-2018  Paul J. Lucas & Fabio Riccardi
 .\"
 .\"     This program is free software; you can redistribute it and/or modify
 .\"     it under the terms of the GNU General Public License as published by
-.\"     the Free Software Foundation; either version 2 of the License, or
+.\"     the Free Software Foundation; either version 3 of the License, or
 .\"     (at your option) any later version.
 .\"     
 .\"     This program is distributed in the hope that it will be useful,
@@ -15,8 +15,7 @@
 .\"     GNU General Public License for more details.
 .\"     
 .\"     You should have received a copy of the GNU General Public License
-.\"     along with this program; if not, write to the Free Software
-.\"     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .\"
 .\" ---------------------------------------------------------------------------
 .\" define code-start macro
@@ -48,7 +47,7 @@
 .PP
 ..
 .\" ---------------------------------------------------------------------------
-.TH \f3CHSM-JAVA\f1 4 "July 2, 2013" "CHSM" "CHSM Language System"
+.TH \f3CHSM-JAVA\f1 4 "January 18, 2018" "CHSM" "CHSM Language System"
 .SH "NAME"
 CHSM-Java \- Concurrent, Hierarchical, Finite State Machine specification language for Java
 .SH "SYNOPSIS"
@@ -176,12 +175,12 @@ public class Example {
 .SS "Types"
 There are five fundamental types: machine, state, cluster, set, and event;
 each is an instance of the
-.BR CHSM.Machine (3),
-.BR CHSM.State (3),
-.BR CHSM.Cluster (3),
-.BR CHSM.Set (3),
+.BR CHSM.Machine ,
+.BR CHSM.State ,
+.BR CHSM.Cluster ,
+.BR CHSM.Set ,
 or
-.BR CHSM.Event (3)
+.B CHSM.Event
 class, respectively.
 .SH "MACHINE DESCRIPTIONS"
 Machine descriptions have the form:
@@ -221,7 +220,7 @@ States declared in
 are child states of an implicit cluster named \f(CWroot\f1.
 Declaring a CHSM with \f(CWhistory\f1 gives the \f(CWroot\f1 cluster a history.
 See
-.BR CHSM.Cluster (3)
+.B CHSM.Cluster
 for more information.
 .SS "Parameter Lists"
 Parameter lists are based on Java function
@@ -231,10 +230,11 @@ argument declarations:
 chsm my_machine( int x ) is {
 .cE
 See
-.BR CHSM.Machine (3)
+.B CHSM.Machine
 for more information.
 .SS "Enter-Exit-Blocks"
-\f2Enter-exit-blocks\f1 are arbitrary Java code
+.I Enter-exit-blocks
+are arbitrary Java code
 executed upon CHSM or state entrances and/or exits.
 They have the form:
 .gS
@@ -268,7 +268,7 @@ They can be specified in either order with no semantic difference.
 .PP
 Within
 .IR Java-statement-list ,
-the variables \f(CWevent\f1 and \f(CWstate\f1 are available
+the variables \f(CWevent\fP and \f(CWstate\fP are available
 and are references to the event that triggered the transition
 and enclosing state, respectively:
 .cS
@@ -296,7 +296,7 @@ If \f(CW<\f2class-name\f(CW>\f1 is given as part of
 said class must have been derived (directly or indirectly)
 from \f(CWCHSM.State\f1.
 See
-.BR CHSM.State (3)
+.B CHSM.State
 for more information.
 .PP
 A
@@ -347,7 +347,7 @@ in the
 is the default child-state.
 .PP
 See
-.BR CHSM.Cluster (3)
+.B CHSM.Cluster
 for information about \f(CWhistory\f1.
 .SH "SET DESCRIPTIONS"
 Set descriptions have the form:
@@ -359,7 +359,7 @@ set-desc:!\f(CWset\fP state-decl \f(CW(\fPchild-list\f(CW)\fP \f3\s+2[\s-2\fPsta
 .TE
 .gE
 See
-.BR CHSM.Set (3)
+.B CHSM.Set
 for more information.
 .SH "EVENT DESCRIPTIONS"
 event descriptions have the form:
@@ -375,7 +375,7 @@ descriptions.
 If \f(CW<\f2event-name\f(CW>\f1 is given, said event is a
 .IR "base event" .
 See
-.BR CHSM::event (3)
+.B CHSM::event
 for more information.
 .SS "Parameter Lists"
 If an event has been declared with parameters,
@@ -644,7 +644,7 @@ For example:
 .cS
     beta -> t %{ ++counter; %};
 .cE
-Within an action, the variable \f(CWevent\f1 is available
+Within an action, the variable \f(CWevent\fP is available
 and is a reference to the event that triggered the transition:
 .cS
     alpha, beta -> t %{
@@ -758,7 +758,7 @@ Note that returning a state that results in an illegal transition
 (such as a child state of a set transitioning to a sibling)
 results in undefined behavior.
 .PP
-Within a target-expression, the variable \f(CWevent\f1 is available
+Within a target-expression, the variable \f(CWevent\fP is available
 and is a reference to the event that triggered the transition:
 .cS
     alpha, beta -> [ f( event ) ];
@@ -766,7 +766,7 @@ and is a reference to the event that triggered the transition:
 .SH "SPECIAL CONSTRUCTS"
 Within all Java code for
 enter-exit-blocks, preconditions, conditions, and actions,
-the following \f(CW$\f1 constructs can be used:
+the following \f(CW$\fP constructs can be used:
 .SS "\f(CW${\f2state-name\fP}\f1"
 Refers to the state
 .IR state-name :
@@ -799,7 +799,7 @@ Refers to the enter/exit event
         %};
 .cE 0
 .SS "\f(CW$in(\fP \f2state-name\fP \f(CW)\fP"
-Returns \f(CWtrue\f1 only if the CHSM is in the state
+Returns \f(CWtrue\fP only if the CHSM is in the state
 .IR state-name :
 .cS
         alpha[ $in( s ) ] -> t;
@@ -833,20 +833,20 @@ is not thread-safe unless made so by the user.
 .SH "FILES"
 .PD 0
 .TP 14
-\f2file\f(CW.chsmj\f1
-CHSM/Java source file
+.IR source \f(CW.chsmj\fP
+CHSM-Java source file
 .TP
-\f2file\f(CW.java\f1
-intermediate Java definition file
+.IT source \f(CW.java\fP
+generated Java declaration file
 .PD
 .SH "SEE ALSO"
 .BR chsmj (1),
-.BR CHSM.Cluster (3),
-.BR CHSM.Event (3),
-.BR CHSM.Machine (3),
-.BR CHSM.Parent (3),
-.BR CHSM.Set (3),
-.BR CHSM.State (3)
+.BR CHSM.Cluster ,
+.BR CHSM.Event ,
+.BR CHSM.Machine ,
+.BR CHSM.Parent ,
+.BR CHSM.Set ,
+.B CHSM.State
 .PP
 David Harel, et al.
 ``On the Formal Semantics of Statecharts.''
@@ -866,7 +866,6 @@ Implementing Concurrent, Hierarchical, Finite State Machines.''
 .I "M.S. Thesis,"
 University of Illinois at Urbana-Champaign, 1993.
 Technical Report: UIUCDCS-R-94-1868.
-\f(CWhttp://www.pauljlucas.org/resume/thesis.pdf\f1
 .SH "AUTHORS"
 Paul J. Lucas
 .RI < paul@lucasmail.org >

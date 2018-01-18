@@ -1,0 +1,93 @@
+<!--
+ !      CHSM Language System
+ !      src/java/libchsm/CHSM/build.xml
+ !
+ !      Copyright (C) 2004-2018  Paul J. Lucas
+ !
+ !      This program is free software; you can redistribute it and/or modify
+ !      it under the terms of the GNU General Public License as published by
+ !      the Free Software Foundation; either version 3 of the License, or
+ !      (at your option) any later version.
+ !
+ !      This program is distributed in the hope that it will be useful,
+ !      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ !      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ !      GNU General Public License for more details.
+ !
+ !      You should have received a copy of the GNU General Public License
+ !      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<project name="CHSM/Java" default="build">
+
+  <!--===== Properties =====================================================-->
+
+  <property name="version" value="5.0"/>
+  <property name="jar-file" value="chsm.jar"/>
+  <property name="javadoc-dir" value="../javadoc"/>
+
+  <!--===== Build ==========================================================-->
+
+  <presetdef name="chsm.javac">
+    <javac debug="true" includeantruntime="false" source="1.5"/>
+  </presetdef>
+
+  <target name="javac">
+    <mkdir dir="build"/>
+    <chsm.javac srcdir="." destdir="build"/>
+  </target>
+
+  <target name="jar" depends="javac">
+    <jar jarfile="${jar-file}" basedir="build" includes="CHSM/*.class"
+         level="9">
+      <manifest>
+        <attribute name="Built-By" value="${user.name}"/>
+        <attribute name="Implementation-Title" value="CHSM"/>
+        <attribute name="Implementation-Vendor" value="Paul J. Lucas"/>
+        <attribute name="Implementation-Version" value="${version}"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="build" depends="jar"/>
+
+  <!--===== Javadoc ========================================================-->
+
+  <target name="javadoc">
+    <mkdir dir="${javadoc-dir}"/>
+    <javadoc destdir="${javadoc-dir}" failonerror="true"
+             doctitle="CHSM Language System ${version} for Java API Specification"
+             windowtitle="CHSM Language System ${version} for Java API Specification">
+      <packageset dir="..">
+        <include name="CHSM"/>
+      </packageset>
+      <link href="http://docs.oracle.com/javase/1.5.0/docs/api/"/>
+      <bottom>
+        <![CDATA[
+          <small>
+            Copyright &copy; 1996-2018 by
+            Paul J. Lucas and Fabio Riccardi.
+            <br/>
+            CHSM is available under the terms of the
+            <a href="http://www.fsf.org/copyleft/gpl.html" target="_top">
+            GNU General Public License</a>.
+            Commercial licenses are also available.
+          </small>
+        ]]>
+      </bottom>
+    </javadoc>
+  </target>
+
+  <!--===== Clean up =======================================================-->
+
+  <target name="clean">
+    <delete dir="build"/>
+  </target>
+
+  <target name="distclean" depends="clean">
+    <delete file="${jar-file}"/>
+    <delete dir="${javadoc-dir}"/>
+  </target>
+
+</project>
+<!-- vim:set et sw=2 ts=2: -->

@@ -1,0 +1,98 @@
+/*
+**      CHSM Language System
+**      test/c++/tests/enter_once.chsmc
+**
+**      Copyright (C) 1996-2018  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 3 of the License, or
+**      (at your option) any later version.
+** 
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+** 
+**      You should have received a copy of the GNU General Public License
+**      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file
+ * Tests that code in enter() is executed exactly once.
+ */
+
+// local
+#include "chsm_cxx_test.h"
+
+// CHSM
+#include <chsm.h>
+
+// standard
+#include <iostream>
+using namespace std;
+
+static int exit_code = -1;
+
+class probe : public CHSM::state {
+public:
+  probe( CHSM_STATE_ARGS ) : CHSM::state( CHSM_STATE_INIT ) { }
+  bool enter( CHSM::event const&, CHSM::state* ) override;
+};
+
+%%
+///////////////////////////////////////////////////////////////////////////////
+
+chsm my_machine is {
+  state a {
+    alpha -> c.x;
+  }
+  cluster c(x) is {
+    state<probe> x;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+%%
+
+bool probe::enter( CHSM::event const &e, CHSM::state *s ) {
+  //
+  // If we are being entered directly, bypassing our parent, the call to our
+  // inherited function is supposed to return false because we will be entered
+  // later by our parent in due course.
+  //
+  if ( !CHSM::state::enter( e, s ) )
+      return false;
+  //
+  // This code is supposed to execute exactly once; if not, exit_code will be
+  // non-zero.
+  //
+  ++exit_code;
+
+  return true;
+}
+
+int main() {
+  my_machine m;
+  m.enter();
+
+#ifdef DEBUG
+  m.debug( CHSM::machine::DEBUG_ALL );
+#endif
+
+  m.alpha();
+
+#ifdef DEBUG
+  m.dump_state();
+#endif
+
+  CHSM_TEST( m.active() &&
+    !m.a.active() && m.c.active() && m.c.x.active()
+  );
+
+  PRINT_RESULT();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// vim:set et sw=2 ts=2 syntax=cpp:

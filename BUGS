@@ -14,20 +14,10 @@ by e-mail: <paul@lucasmail.org>.  Please include the following information:
 -------------------------------------------------------------------------------
 To get a stack trace for C++:
 
-1. Go to the "config" directory and edit the "config.mk" file uncommenting the
-   line:
-
-	DEBUG:=		true
-
-2. Go back to the top-level directory and type:
-
-	make distclean
-	make
-
-3. Re-execute the same command to make it dump core again.  A "core" file
-   should be generated (if the filesystem is writable and you have write
-   permission to it).  For Mac OS X, core files are placed in the directory
-   /cores and are of the form "core.XXXXX" where XXXXX is the process ID.
+1. A "core" file should be generated (if the filesystem is writable and you
+   have write permission to it).  For macOS, core files are placed in the
+   directory /cores and are of the form core.XXXXX where XXXXX is the process
+   ID.
 
    If you can write to the filesystem yet no core file was generated, type:
 
@@ -35,9 +25,9 @@ To get a stack trace for C++:
 
    and try again.
 
-4. Execute gdb by typing:
+2. Execute gdb by typing:
 
 	gdb /path/to/chsm-executable /path/to/core
 
-5. Then in gdb, type "where" and copy and paste the output into an e-mail
-   message to me.
+3. Then in gdb, type "where" and copy and paste the output into an e-mail to
+   me.

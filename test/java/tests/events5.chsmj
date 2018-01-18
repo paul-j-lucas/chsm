@@ -1,0 +1,59 @@
+/*
+**      CHSM Language System
+**      src/java/tests/events5.chsmj
+**
+**      Copyright (C) 2006-2013  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 3 of the License, or
+**      (at your option) any later version.
+** 
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+** 
+**      You should have received a copy of the GNU General Public License
+**      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file
+ * Tests that an unused, but broadcast derived event correctly broadcasts the
+ * base event.
+ */
+
+%%
+///////////////////////////////////////////////////////////////////////////////
+
+chsm<Test> events5_machine is {
+  event alpha;
+  event<alpha> beta;
+
+  state a {
+    alpha -> b;
+  }
+  state b;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+%%
+
+class events5 {
+  public static void main( String args[] ) {
+    events5_machine m = new events5_machine();
+    m.enter();
+    m.beta();
+
+    if ( !( m.active() &&
+            !m.a.active() && m.b.active()
+    ) )
+      Test.exitCode = 1;
+
+    Test.printResult();
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// vim:set et sw=2 ts=2 syntax=java:
