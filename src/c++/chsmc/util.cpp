@@ -35,6 +35,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 
 /// @endcond
 
