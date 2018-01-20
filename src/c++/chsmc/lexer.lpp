@@ -217,13 +217,16 @@ static void lex_fatal( char const *msg ) {
   yy_fatal_error( msg );
 }
 
-/**
- * Standard lex function to know whether to continue parsing upon reaching EOF.
- *
- * @return Always returns 1 to indicate done.
- */
-static int yywrap( void ) {
-  return 1;
+extern "C" {
+  /**
+   * Standard lex function to know whether to continue parsing upon reaching
+   * EOF.
+   *
+   * @return Always returns 1 to indicate done.
+   */
+  static int yywrap( void ) {
+    return 1;
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
