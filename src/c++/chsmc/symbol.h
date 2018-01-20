@@ -163,9 +163,7 @@ public:
    * @param name The %symbol name.
    * @param si An initial synfo, if any.
    */
-  explicit symbol( std::string const &name, synfo *si = nullptr ) :
-    name_( name )
-  {
+  symbol( std::string const &name, synfo *si = nullptr ) : name_( name ) {
     init( si );
   }
 
@@ -175,9 +173,7 @@ public:
    * @param name The %symbol name.
    * @param si An initial synfo, if any.
    */
-  explicit symbol( char const *name, synfo *si = nullptr ) :
-    name_( name )
-  {
+  symbol( char const *name, synfo *si = nullptr ) : name_( name ) {
     init( si );
   }
 
