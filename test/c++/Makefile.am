@@ -20,14 +20,16 @@
 
 AUTOMAKE_OPTIONS = 1.12			# needed for TEST_LOG_DRIVER
 
-CXXFLAGS +=	-I$(top_srcdir)/src/c++/libchsm \
-		-L$(top_builddir)/src/c++/libchsm \
-		-lchsm
+CXXFLAGS +=	-I$(top_srcdir)/src/c++/libchsm
+LDADD =		$(top_builddir)/src/c++/libchsm/libchsm.a
 
 CHSMC =		$(top_builddir)/src/c++/chsmc/chsmc
 
 .chsmc.cpp:
 	$(CHSMC) -E $< > $@
+
+.cpp:
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDADD)
 
 ###############################################################################
 
