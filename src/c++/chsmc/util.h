@@ -209,6 +209,15 @@ char const* base_name( char const *path );
 std::string base_name( std::string const &path );
 
 /**
+ * Checks whether \a s ends with \a suffix.
+ *
+ * @param s The string to check.
+ * @param suffix The suffix to check for.
+ * @return Returns `true` only if \a s ends with \a suffix.
+ */
+bool ends_with( std::string const &s, std::string const &suffix );
+
+/**
  * Converts a string into a valid C identifier by:
  *
  *  1. Replacing all characters not in `[A-Za-z0-9_]` with `_`.
@@ -284,7 +293,7 @@ char const* temp_dir();
 /**
  * Gets the full path to a unique temporary file.
  *
- * @param pattern A file name with some number of `X`s appended to it, e.g.,
+ * @param pattern A file name that \e must end with \e exactly six `X`s, e.g.,
  * `temp.XXXXXX`.
  * @return Returns said full path.
  */

@@ -59,6 +59,11 @@ string base_name( string const &path ) {
   return path;
 }
 
+bool ends_with( string const &s, string const &suffix ) {
+  return  s.size() >= suffix.size() &&
+          s.compare( s.size() - suffix.size(), suffix.size(), suffix ) == 0;
+}
+
 string identify( string const &s ) {
   string result;
   bool underscore = false;
@@ -148,11 +153,14 @@ char const* temp_dir() {
 }
 
 string temp_path( char const *pattern ) {
-  string pat_str( temp_dir() );
-  path_append( &pat_str, pattern );
-  unique_ptr<char[]> const pat_buf { new char[ pat_str.size() + 1/*null*/ ] };
-  ::strcpy( pat_buf.get(), pat_str.c_str() );
-  return string( ::mktemp( pat_buf.get() ) );
+  string pattern_str( pattern );
+  assert( ends_with( pattern_str, "XXXXXX" ) );
+
+  string path_str( temp_dir() );
+  path_append( &path_str, pattern_str );
+  unique_ptr<char[]> const mktemp_buf { new char[ path_str.size() + 1 ] };
+  ::strcpy( mktemp_buf.get(), path_str.c_str() );
+  return string( ::mktemp( mktemp_buf.get() ) );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

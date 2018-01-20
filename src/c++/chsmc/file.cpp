@@ -89,7 +89,9 @@ void source_file::init() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-user_code::user_code() : file_base( temp_path( "chsm.XXXXX" ), std::ios::out ) {
+user_code::user_code() :
+  file_base( temp_path( "chsm.XXXXXX" ), std::ios::out )
+{
   out() << inc_indent;
 }
 
