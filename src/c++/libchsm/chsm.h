@@ -394,9 +394,6 @@ struct transition {
    * @return Returns `true` only if the transition is legal.
    */
   static bool is_legal( state const *s1, state const *s2 );
-
-  transition( transition const& ) = delete;
-  transition& operator=( transition const& ) = delete;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
