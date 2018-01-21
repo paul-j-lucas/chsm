@@ -207,7 +207,7 @@ void machine::algorithm() {
 
         if ( is_debug( DEBUG_ALGORITHM ) )
           --debug_indent_;
-      }
+      } // for
 
       if ( is_debug( DEBUG_ALGORITHM ) )
         --debug_indent_;
