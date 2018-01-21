@@ -63,7 +63,7 @@ void machine::algorithm() {
     return;
   in_progress_ = true;
 
-  if ( debug( DEBUG_ALGORITHM ) ) {
+  if ( is_debug( DEBUG_ALGORITHM ) ) {
     dout() << "ALGORITHM BEGINNING" ENDL;
     ++debug_indent_;
   }
@@ -73,7 +73,7 @@ void machine::algorithm() {
     event_queue::size_type i;
     event_queue::iterator e_it;
 
-    if ( debug( DEBUG_ALGORITHM ) )
+    if ( is_debug( DEBUG_ALGORITHM ) )
       dout() << "events in micro-step: " << events_in_step ENDL;
 
     //
@@ -86,7 +86,7 @@ void machine::algorithm() {
     // of children since the CHSM-to-C++ compiler defines transitions in just
     // the right order.
     //
-    if ( debug( DEBUG_ALGORITHM ) ) {
+    if ( is_debug( DEBUG_ALGORITHM ) ) {
       dout() << "ALGORITHM PHASE I: Exit \"from\" states" ENDL;
       ++debug_indent_;
     }
@@ -102,7 +102,7 @@ void machine::algorithm() {
         base->param_block_ = cur_event.param_block_;
       } // for
 
-      if ( debug( DEBUG_ALGORITHM ) ) {
+      if ( is_debug( DEBUG_ALGORITHM ) ) {
         dout() << "iterating transitions of: " << cur_event.name() ENDL;
         ++debug_indent_;
       }
@@ -120,7 +120,7 @@ void machine::algorithm() {
           continue;
         }
 
-        if ( debug( DEBUG_ALGORITHM ) ) {
+        if ( is_debug( DEBUG_ALGORITHM ) ) {
           if ( !t->is_internal() ) {
             dout()
               << "performing: " << from->name() << " -> "
@@ -136,7 +136,7 @@ void machine::algorithm() {
         //
         if ( (t->is_internal() || from->exit( cur_event, target_[ t.id() ] ))
              && t->action_ != nullptr ) {
-          if ( debug( DEBUG_ALGORITHM ) ) {
+          if ( is_debug( DEBUG_ALGORITHM ) ) {
             dout() << "performing action" ENDL;
             ++debug_indent_;
           }
@@ -150,15 +150,15 @@ void machine::algorithm() {
             //
           }
 
-          if ( debug( DEBUG_ALGORITHM ) )
+          if ( is_debug( DEBUG_ALGORITHM ) )
             --debug_indent_;
         }
 
-        if ( debug( DEBUG_ALGORITHM ) )
+        if ( is_debug( DEBUG_ALGORITHM ) )
           --debug_indent_;
       } // for
 
-      if ( debug( DEBUG_ALGORITHM ) )
+      if ( is_debug( DEBUG_ALGORITHM ) )
         --debug_indent_;
     } // for
 
@@ -168,7 +168,7 @@ void machine::algorithm() {
     // Iterate through all the events and their transitions again to enter the
     // inactive "to" states.  Also unmark the transitions.
     //
-    if ( debug( DEBUG_ALGORITHM ) ) {
+    if ( is_debug( DEBUG_ALGORITHM ) ) {
       --debug_indent_;
       dout() << "ALGORITHM PHASE II: Enter \"to\" states" ENDL;
       ++debug_indent_;
@@ -177,7 +177,7 @@ void machine::algorithm() {
     for ( i = 0, e_it = event_queue_.begin(); i < events_in_step;
           ++i, ++e_it ) {
       event const &cur_event = **e_it;
-      if ( debug( DEBUG_ALGORITHM ) ) {
+      if ( is_debug( DEBUG_ALGORITHM ) ) {
         dout() << "iterating transitions of: " << cur_event.name() ENDL;
         ++debug_indent_;
       }
@@ -186,7 +186,7 @@ void machine::algorithm() {
         if ( taken_[ t.id() ] != &cur_event )
           continue;
 
-        if ( debug( DEBUG_ALGORITHM ) ) {
+        if ( is_debug( DEBUG_ALGORITHM ) ) {
           if ( !t->is_internal() ) {
             dout()
               << "performing: " << state_[ t->from_id_ ]->name() << " -> "
@@ -205,11 +205,11 @@ void machine::algorithm() {
         }
         taken_[ t.id() ] = nullptr;
 
-        if ( debug( DEBUG_ALGORITHM ) )
+        if ( is_debug( DEBUG_ALGORITHM ) )
           --debug_indent_;
       }
 
-      if ( debug( DEBUG_ALGORITHM ) )
+      if ( is_debug( DEBUG_ALGORITHM ) )
         --debug_indent_;
     } // for
 
@@ -219,7 +219,7 @@ void machine::algorithm() {
     // All the events in the current micro-step have now been processed --
     // remove them from the queue.
     //
-    if ( debug( DEBUG_ALGORITHM ) ) {
+    if ( is_debug( DEBUG_ALGORITHM ) ) {
       --debug_indent_;
       dout() << "ALGORITHM PHASE III: Dequeue events" ENDL;
       ++debug_indent_;
@@ -230,17 +230,17 @@ void machine::algorithm() {
       cur_event.broadcasted();
       event_queue_.pop_front();
 
-      if ( debug( DEBUG_EVENTS ) )
+      if ( is_debug( DEBUG_EVENTS ) )
         dout() << "dequeued: " << cur_event.name() ENDL;
     } // for
 
-    if ( debug( DEBUG_ALGORITHM ) )
+    if ( is_debug( DEBUG_ALGORITHM ) )
       --debug_indent_;
   } // while
 
   in_progress_ = false;
 
-  if ( debug( DEBUG_ALGORITHM ) ) {
+  if ( is_debug( DEBUG_ALGORITHM ) ) {
     --debug_indent_;
     dout() << "ALGORITHM COMPLETE" ENDL;
   }

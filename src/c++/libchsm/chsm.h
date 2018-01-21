@@ -624,7 +624,7 @@ private:
    */
   transition_list const transitions_;
 
-  bool debug_events() const;
+  bool is_debug_events() const;
   std::ostream& dout() const;
 
   /**

@@ -84,7 +84,7 @@ bool state::enter( event const &trigger, state* ) {
     }
   }
 
-  if ( machine_.debug( machine::DEBUG_ENTER_EXIT ) )
+  if ( machine_.is_debug( machine::DEBUG_ENTER_EXIT ) )
     dout() << "entering: " << name() ENDL;
 
   state_ = STATE_ACTIVE;
@@ -122,7 +122,7 @@ bool state::exit( event const &trigger, state *to ) {
 
   state_ = STATE_INACTIVE;
 
-  if ( machine_.debug( machine::DEBUG_ENTER_EXIT ) )
+  if ( machine_.is_debug( machine::DEBUG_ENTER_EXIT ) )
     dout() << "exiting : " << name() ENDL;
 
   //
