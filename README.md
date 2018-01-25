@@ -27,6 +27,21 @@ Although the current implementation has evolved over time,
 the [original description](https://www.dropbox.com/s/06xf5wcsnhi0wht/pjl-chsm-thesis.pdf)
 is also available.
 
+## Installation
+
+The git repository contains only the necessary source code.
+Things like `configure` are _derived_ sources and
+[should not be included in repositories](http://stackoverflow.com/a/18732931).
+If you have `autoconf`, `automake`, and `m4` installed,
+you can generate `configure` yourself by doing:
+
+    autoreconf -fiv
+
+You will also need `flex` and `bison`
+(`lex` and `yacc` won't do).
+In either case,
+then follow the generic installation instructions given in `INSTALL`.
+
 **Paul J. Lucas**  
 San Francisco, California, USA  
-17 January 2018
+25 January 2018
