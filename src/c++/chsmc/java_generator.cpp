@@ -174,7 +174,7 @@ private:
 
 /**
  * A %java_declarer is-a java_generator that generates the declarations portion
- * of C++ code.
+ * of Java code.
  */
 class java_declarer : public java_generator {
 public:
@@ -543,7 +543,7 @@ void java_declarer::visit( chsm_info const &si ) {
         T_ENDL;
   if ( si.java_public_ )
     T_OUT << "public ";
-  T_OUT  << "class " << sy->name() << " extends ";
+  T_OUT << "class " << sy->name() << " extends ";
 
   if ( !si.derived_.empty() )
     T_OUT << si.derived_;
@@ -553,8 +553,8 @@ void java_declarer::visit( chsm_info const &si ) {
   T_OUT << " {" T_ENDL;
 
   // emit state declarations, recursively
-  T_OUT  T_ENDL
-      << indent << "// states" T_ENDL;
+  T_OUT T_ENDL
+        << indent << "// states" T_ENDL;
   INFO_CONST( state, si.sy_root_ )->accept( *this );
 
   for ( auto const &child : INFO_CONST( parent, si.sy_root_ )->children_ )
