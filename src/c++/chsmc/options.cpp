@@ -144,7 +144,6 @@ static void check_mutually_exclusive( char const *opts1, char const *opts2 ) {
   } // for
 }
 
-#if 0
 /**
  * For each option in \a opts that was given, checks that at least one of
  * \a req_opts was also given.
@@ -172,7 +171,6 @@ static void check_required( char const *opts, char const *req_opts ) {
     }
   } // for
 }
-#endif
 
 /**
  * Formats an option as `[--%%s/]-%%c` where `%%s` is the long option (if any)
@@ -275,6 +273,9 @@ static void parse_options( int *pargc, char const ***pargv ) {
   check_mutually_exclusive( "E", "cdDhj" );
   check_mutually_exclusive( "j", "cdDEhx" );
   check_mutually_exclusive( "v", "cdDEhjPSxy" );
+
+  check_required( "cD", "dh" );
+  check_required( "dh", "cD" );
 
   if ( print_version ) {
     cerr << PACKAGE_STRING << endl;
