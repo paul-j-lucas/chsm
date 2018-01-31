@@ -71,6 +71,7 @@ static struct option const LONG_OPTS[] = {
   { "declaration",  required_argument,  nullptr, 'd' },
   { "definition",   required_argument,  nullptr, 'D' },
   { "stdout",       no_argument,        nullptr, 'E' },
+  { "java",         required_argument,  nullptr, 'j' },
   { "no-line",      no_argument,        nullptr, 'P' },
 #ifdef ENABLE_STACK_DEBUG
   { "stack-debug",  no_argument,        nullptr, 'S' },
@@ -247,12 +248,13 @@ static void parse_options( int *pargc, char const ***pargv ) {
       case 'h': opt_lang              = lang::CPP;      // no break;
       case 'd': opt_declaration_file  = optarg;               break;
 
-      case 'c': opt_lang              = lang::CPP;
+      case 'c': opt_lang              = lang::CPP;      // no break;
+      case 'D': opt_definition_file   = optarg;               break;
                 opt_definition_file   = optarg;               break;
 
       case 'j': opt_lang = lang::JAVA;
-                opt_declaration_file  = optarg;         // no break;
-      case 'D': opt_definition_file   = optarg;               break;
+                opt_declaration_file  = optarg;
+                opt_definition_file   = optarg;               break;
 
       case 'E': opt_codegen_only      = true;                 break;
       case 'P': opt_line_directives   = false;                break;
@@ -269,8 +271,10 @@ static void parse_options( int *pargc, char const ***pargv ) {
   } // for
   *pargc -= ::optind, *pargv += ::optind;
 
-  check_mutually_exclusive( "v", "cdDEhjPSy" );
+  check_mutually_exclusive( "ch", "jx" );
   check_mutually_exclusive( "E", "cdDhj" );
+  check_mutually_exclusive( "j", "cdDEhx" );
+  check_mutually_exclusive( "v", "cdDEhjPSxy" );
 
   if ( print_version ) {
     cerr << PACKAGE_STRING << endl;
@@ -289,11 +293,11 @@ static void usage() {
 "usage: " << me << " [options] infile\n"
 "\n"
 "options:\n"
-"  -c                     Same as --definition/-D; implies -xc++\n"
+"  -c file                Same as --definition/-D; implies -xc++\n"
 "  --declaration/-d file  Set declaration file.\n"
 "  --definition/-D file   Set definition file.\n"
-"  -h                     Same as --declaration/-d; implies -xc++.\n"
-"  -j                     Same as -d and -D; implies -xjava.\n"
+"  -h file                Same as --declaration/-d; implies -xc++.\n"
+"  --java/-j file         Same as -d and -D; implies -xjava.\n"
 "  --language/-x lang     Set language to generate [default: C++].\n"
 "  --no-line/-P           Suppress #line directives in generated C++ code.\n"
 #ifdef ENABLE_STACK_DEBUG
