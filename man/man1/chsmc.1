@@ -17,7 +17,7 @@
 .\"     You should have received a copy of the GNU General Public License
 .\"     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .\"
-.TH \f3chsmc\fP 1 "January 18, 2018" "CHSM" "CHSM Language System"
+.TH \f3chsmc\fP 1 "January 31, 2018" "CHSM" "CHSM Language System"
 .SH NAME
 chsmc \- CHSM compiler
 .SH SYNOPSIS
@@ -63,38 +63,38 @@ and
 means
 .IR string .
 .TP 4
-.B \-c
+.BI \-c " f"
 (C++ only.)
 Same as
 \f(CW\-\-definition\fP
 or
-\f(CW-D\fP;
-implies \f(CW\-\-language=c++\fP.
+\f(CW-D\fP,
+but also implies \f(CW\-\-language=c++\fP.
 .TP
 .BI \-\-declaration \f1=\fPf "\f1 | \fP" "" \-d " f"
-Explicitly sets the declaration file name to
+Sets the declaration file name to
 .IR f .
 .TP
 .BI \-\-definition \f1=\fPf "\f1 | \fP" "" \-D " f"
 (C++ only.)
-Explicitly sets the definition file name to
+Sets the definition file name to
 .IR f .
 .TP
-.B \-h
+.BI \-h " f"
 (C++ only.)
 Same as
 \f(CW\-\-declaration\fP
 or
-\f(CW-d\fP;
-implies \f(CW\-\-language=c++\fP.
+\f(CW-d\fP,
+but also implies \f(CW\-\-language=c++\fP.
 .TP
-.B \-j
-Same as the
-either
+.BI \-\-java \f1=\fPf "\f1 | \fP" "" \-j " f"
+(Java only.)
+Same as
 \f(CW\-\-declaration\fP
 or
-\f(CW-d\fP;
-implies \f(CW\-\-language=java\fP.
+\f(CW-d\fP,
+but also implies \f(CW\-\-language=java\fP.
 .TP
 .BI \-\-language \f1=\fPs "\f1 | \fP" "" \-x " s"
 Explicitly sets the language to generate to
@@ -110,7 +110,7 @@ or
 Suppress \f(CW#line\fP directives in the generated C++ code.
 .TP
 .BR \-\-stdout " | " \-E
-Generate all code to standard output
+Generates all code to standard output
 instead of producing declaration and definition files.
 .TP
 .BR \-\-version " | " \-v
@@ -166,5 +166,5 @@ Paul J. Lucas
 .RI < paul@lucasmail.org >
 .br
 Fabio Riccardi
-.RI < fabio.riccardi@mac.com >
+.RI < fricc@gmail.com >
 .\" vim:set et sw=4 ts=4:
