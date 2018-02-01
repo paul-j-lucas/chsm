@@ -41,7 +41,6 @@ chsmc_SOURCES =		base_info.h \
 			global_info.h \
 			indent.cpp indent.h \
 			info_visitor.cpp info_visitor.h \
-			java_generator.cpp java_generator.h \
 			lexer.lpp lexer.h \
 			list_sep.h \
 			literals.cpp literals.h \
@@ -61,6 +60,10 @@ chsmc_SOURCES =		base_info.h \
 			user_event_info.h \
 			util.cpp util.h \
 			xxx_info.cpp
+
+if ENABLE_JAVA
+chsmc_SOURCES +=	java_generator.cpp java_generator.h
+endif
 
 BUILT_SOURCES =		parser.cpp parser.hpp lexer.cpp
 

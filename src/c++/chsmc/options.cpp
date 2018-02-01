@@ -71,7 +71,9 @@ static struct option const LONG_OPTS[] = {
   { "declaration",  required_argument,  nullptr, 'd' },
   { "definition",   required_argument,  nullptr, 'D' },
   { "stdout",       no_argument,        nullptr, 'E' },
+#ifdef ENABLE_JAVA
   { "java",         required_argument,  nullptr, 'j' },
+#endif /* ENABLE_JAVA */
   { "no-line",      no_argument,        nullptr, 'P' },
 #ifdef ENABLE_STACK_DEBUG
   { "stack-debug",  no_argument,        nullptr, 'S' },
@@ -89,7 +91,10 @@ static struct option const LONG_OPTS[] = {
  *
  * @hideinitializer
  */
-static char const   SHORT_OPTS[] = "c:d:D:Eh:j:Pvx:"
+static char const   SHORT_OPTS[] = "c:d:D:Eh:Pvx:"
+#ifdef ENABLE_JAVA
+  "j:"
+#endif /* ENABLE_JAVA */
 #ifdef ENABLE_STACK_DEBUG
   "S"
 #endif /* ENABLE_STACK_DEBUG */
@@ -250,9 +255,11 @@ static void parse_options( int *pargc, char const ***pargv ) {
       case 'D': opt_definition_file   = optarg;               break;
                 opt_definition_file   = optarg;               break;
 
+#ifdef ENABLE_JAVA
       case 'j': opt_lang = lang::JAVA;
                 opt_declaration_file  = optarg;
                 opt_definition_file   = optarg;               break;
+#endif /* ENABLE_JAVA */
 
       case 'E': opt_codegen_only      = true;                 break;
       case 'P': opt_line_directives   = false;                break;
@@ -298,7 +305,9 @@ static void usage() {
 "  --declaration/-d file  Set declaration file.\n"
 "  --definition/-D file   Set definition file.\n"
 "  -h file                Same as --declaration/-d; implies -xc++.\n"
+#ifdef ENABLE_JAVA
 "  --java/-j file         Same as -d and -D; implies -xjava.\n"
+#endif /* ENABLE_JAVA */
 "  --language/-x lang     Set language to generate [default: C++].\n"
 "  --no-line/-P           Suppress #line directives in generated C++ code.\n"
 #ifdef ENABLE_STACK_DEBUG

@@ -23,7 +23,9 @@
 #include "code_generator.h"
 #include "chsm_compiler.h"
 #include "cpp_generator.h"
+#ifdef ENABLE_JAVA
 #include "java_generator.h"
+#endif /* ENABLE_JAVA */
 #include "options.h"
 
 // standard
@@ -38,8 +40,10 @@ unique_ptr<code_generator> code_generator::create( lang l ) {
   switch ( l ) {
     case lang::CPP:
       return cpp_generator::create();
+#ifdef ENABLE_JAVA
     case lang::JAVA:
       return java_generator::create();
+#endif /* ENABLE_JAVA */
     default:
       INTERNAL_ERR( static_cast<int>( l ) << ": unexpected value for lang\n" );
   } // switch
@@ -60,7 +64,9 @@ lang code_generator::map_ext_to_lang( string const &ext ) {
   typedef std::unordered_map<string,lang> ext_map_type;
   static ext_map_type const ext_map {
     { "chsmc", lang::CPP  },
+#ifdef ENABLE_JAVA
     { "chsmj", lang::JAVA },
+#endif /* ENABLE_JAVA */
   };
   auto const found = ext_map.find( ext );
   return found != ext_map.end() ? found->second : lang::NONE;
