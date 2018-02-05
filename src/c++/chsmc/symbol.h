@@ -91,6 +91,13 @@ public:
   }
 
   /**
+   * Gets the name of the symbol to thich this %synfo belongs.
+   *
+   * @return Returns said name.
+   */
+  char const* name() const;
+
+  /**
    * Gets the scope level of this %synfo.
    *
    * @return Returns said scope.
@@ -221,7 +228,9 @@ public:
   }
 
   /**
-   * Returns the name of this symbol.
+   * Gets the name of this symbol.
+   *
+   * @return Returns said name.
    */
   char const* name() const {
     return name_.c_str();
@@ -337,6 +346,10 @@ public:
 std::ostream& operator<<( std::ostream &o, symbol_table const &s );
 
 ////////// inlines ////////////////////////////////////////////////////////////
+
+inline char const* synfo::name() const {
+  return symbol_->name();
+}
 
 #define PJL_RELOP(OP)                                               \
 inline bool operator OP( synfo const &s1, synfo const &s2 ) {       \
