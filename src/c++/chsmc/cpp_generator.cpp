@@ -388,7 +388,7 @@ void cpp_declarer::emit_actions( symbol const *sy_state ) {
   auto const &action = INFO_CONST( state, sy_state )->action_;
 
   if ( action.has_enter_ )
-    T_OUT << indent(2) << "void "
+    T_OUT << indent << "void "
           << chsm_info::PREFIX_ENTER << chsm_info::PREFIX_ACTION
           << mangle( sy_state->name() )
           << "( "
@@ -397,7 +397,7 @@ void cpp_declarer::emit_actions( symbol const *sy_state ) {
           << " );" T_ENDL;
 
   if ( action.has_exit_ )
-    T_OUT << indent(2) << "void "
+    T_OUT << indent << "void "
           << chsm_info::PREFIX_EXIT << chsm_info::PREFIX_ACTION
           << mangle( sy_state->name() )
           << "( "
