@@ -249,7 +249,7 @@ static void yyerror( char const *msg ) {
 /*
   There is a notation used at the beginning of some productions, e.g.:
 
-      state_sym -> ---
+      sy_state -> ---
 
   The stuff on the left of the -> is what is expected to already exist on the
   semantic stack; the stuff on the right is what is left on the semantic stack
@@ -259,11 +259,11 @@ static void yyerror( char const *msg ) {
 
   Additionally:
 
-      Items ending in:    Are of type:
-      ---------------     -----------
-      _sym                symbol*
-      ?                   bool
-      (nothing)           int (usually)
+      Items like: Are of type:
+      ----------- -----------
+      sy_foo      symbol*
+      foo?        bool
+      (nothing)   int (usually)
 
   Productions not having any of the above notation don't use the semantic stack
   at all.
@@ -305,7 +305,7 @@ chsm
 
 chsm_description
     /*
-    ** derived_class(char*) chsm_sym -> ---
+    ** derived_class(char*) sy_chsm -> ---
     */
   : public_opt Y_CHSM derived_class_spec_opt identifier
     {
@@ -384,7 +384,7 @@ enter_exit_action_spec_opt
 
 body
     /*
-    ** new_parent_sym -> ---
+    ** sy_new_parent -> ---
     */
   : Y_IS lbrace_expected
     {
@@ -443,7 +443,7 @@ the_end_opt
 
 state_description
     /*
-    ** derived_class(char*) state_sym -> ---
+    ** derived_class(char*) sy_state -> ---
     */
   : Y_STATE state_declaration
     {
@@ -461,7 +461,7 @@ state_description
 
 cluster_description
     /*
-    ** derived_class(char*) cluster_sym history? -> ---
+    ** derived_class(char*) sy_cluster history? -> ---
     */
   : Y_CLUSTER state_declaration child_declaration history_opt
     {
@@ -503,7 +503,7 @@ history_opt
 
 deep_opt
     /*
-    ** cluster_sym -> cluster_sym
+    ** sy_cluster -> sy_cluster
     */
   : /* empty */
   | Y_DEEP
@@ -522,7 +522,7 @@ deep_opt
 
 set_description
     /*
-    ** derived_class(char*) set_sym -> ---
+    ** derived_class(char*) sy_set -> ---
     */
   : Y_SET state_declaration child_declaration
     {
@@ -541,7 +541,7 @@ set_description
 
 state_declaration
     /*
-    ** ident_sym -> state_sym
+    ** sy_ident -> sy_state
     */
   : derived_class_spec_opt identifier
     {
@@ -641,7 +641,7 @@ child_list
 
 child
     /*
-    ** parent_sym child_sym -> parent_sym
+    ** sy_parent sy_child -> sy_parent
     */
   : identifier
     {
@@ -706,7 +706,7 @@ event_description
 
 base_event_spec_opt
     /*
-    ** -> event_sym
+    ** -> sy_event
     */
   : /* empty */
     {
@@ -728,7 +728,7 @@ base_event_spec_opt
 
 base_event
     /*
-    ** -> event_sym
+    ** -> sy_event
     */
   : identifier
     {
@@ -751,7 +751,7 @@ event_precondition_opt
 
 event_precondition_expr
     /*
-    ** event_sym param_data* -> event_sym param_data*
+    ** sy_event param_data* -> sy_event param_data*
     */
   : '['
     {
@@ -768,7 +768,7 @@ event_precondition_expr
 
 event_precondition_func
     /*
-    ** event_sym -> event_sym
+    ** sy_event -> sy_event
     */
   : "%{"
     {
@@ -817,7 +817,7 @@ transition
       PUSH( 0 ); // number of events in event_condition_list
     }
     /*
-    ** from_state_sym { event_sym condition_id }... num_events to_state_sym
+    ** sy_from_state { sy_event condition_id }... num_events sy_to_state
     **      target_id action_id -> ---
     */
     event_condition_list transition_type semi_expected
@@ -856,7 +856,7 @@ transition
 
 transition_type
     /*
-    ** -> state_sym target_id action_id
+    ** -> sy_state target_id action_id
     */
   : "->"
     {
@@ -882,7 +882,7 @@ transition_type
 
 transition_target
     /*
-    ** -> state_sym target_id
+    ** -> sy_state target_id
     */
   : state_name
     {
@@ -909,7 +909,7 @@ transition_target
 
 event_condition_list
     /*
-    ** 0 -> { event_sym condition_id }... num_events
+    ** 0 -> { sy_event condition_id }... num_events
     */
   : event_condition_spec
   | event_condition_list comma_expected event_condition_spec
@@ -920,7 +920,7 @@ event_condition_list
 
 event_condition_spec
     /*
-    ** num_events -> event_sym condition_id num_events+1
+    ** num_events -> sy_event condition_id num_events+1
     */
   : event_name
     {
@@ -978,7 +978,7 @@ enter_exit_action_list_opt
 
 enter_exit_action
     /*
-    ** state_sym prefix(char*) -> state_sym
+    ** sy_state prefix(char*) -> sy_state
     */
   : Y_UPON enter_or_exit "%{"
     {
@@ -1017,7 +1017,7 @@ enter_exit_action
 
 state_name
     /*
-    ** depth ident_sym substates(char*) -> state_sym
+    ** depth sy_ident substates(char*) -> sy_state
     */
   : scope_resolver_opt identifier substates_opt
     {
@@ -1119,7 +1119,7 @@ substates_opt
 
 paren_state_name
     /*
-    ** -> state_sym
+    ** -> sy_state
     */
   : lparen_expected state_name rparen_expected
   | '(' state_name_error ')'
@@ -1136,7 +1136,7 @@ paren_state_name
 
 event_name
     /*
-    ** prefix(char*) state_sym -> event_sym
+    ** prefix(char*) sy_state -> sy_event
     */
   : user_event
   | enter_or_exit paren_state_name
@@ -1162,7 +1162,7 @@ event_name
 
 user_event
     /*
-    ** -> event_sym
+    ** -> sy_event
     */
   : identifier
     {
@@ -1494,7 +1494,7 @@ cv_qualifier_list
 
 identifier
     /*
-    ** -> ident_sym
+    ** -> sy_ident
     */
   : Y_IDENTIFIER
     {
@@ -1546,7 +1546,7 @@ embedded_identifier
 
 embedded_event_name
     /*
-    ** event_sym ident_sym -> ---
+    ** sy_event sy_ident -> ---
     */
   : '$' Y_PARAM lparen_expected user_event
     comma_expected identifier rparen_expected
@@ -1565,7 +1565,7 @@ embedded_event_name
 
 embedded_state_name
     /*
-    ** state_sym -> ---
+    ** sy_state -> ---
     */
   : '$' '{' state_name rbrace_expected
     {
