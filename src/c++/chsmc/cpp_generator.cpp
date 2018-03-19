@@ -388,7 +388,7 @@ void cpp_declarer::emit_actions( symbol const *sy_state ) {
   auto const &action = INFO_CONST( state, sy_state )->action_;
 
   if ( action.has_enter_ )
-    T_OUT << indent << "void "
+    T_OUT << indent(2) << "void "
           << chsm_info::PREFIX_ENTER << chsm_info::PREFIX_ACTION
           << mangle( sy_state->name() )
           << "( "
@@ -397,7 +397,7 @@ void cpp_declarer::emit_actions( symbol const *sy_state ) {
           << " );" T_ENDL;
 
   if ( action.has_exit_ )
-    T_OUT << indent << "void "
+    T_OUT << indent(2) << "void "
           << chsm_info::PREFIX_EXIT << chsm_info::PREFIX_ACTION
           << mangle( sy_state->name() )
           << "( "
@@ -602,12 +602,12 @@ void cpp_declarer::visit( user_event_info const &si ) {
   } // for
 
   // emit param_block constructor declaration
-  T_OUT << indent(2) << "param_block( " << CHSM_NS_ALIAS << "::event const&";
+  T_OUT << indent(3) << "param_block( " << CHSM_NS_ALIAS << "::event const&";
   if ( si.has_any_parameters() ) {
     T_OUT << param_list( si, param_data::EMIT_COMMA ) << ");" T_ENDL;
   } else {
     T_OUT << " event ) : " T_ENDL
-          << indent(3) << "base_param_block( event ) { }" T_ENDL;
+          << indent(4) << "base_param_block( event ) { }" T_ENDL;
   }
 
   // start of protected section
