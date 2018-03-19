@@ -73,9 +73,6 @@ void machine::algorithm() {
     event_queue::size_type i;
     event_queue::iterator e_it;
 
-    if ( is_debug( DEBUG_ALGORITHM ) )
-      dout() << "events in micro-step: " << events_in_step ENDL;
-
     //
     // Phase I: Exit the "from" states
     //
@@ -87,6 +84,7 @@ void machine::algorithm() {
     // the right order.
     //
     if ( is_debug( DEBUG_ALGORITHM ) ) {
+      dout() << "events in micro-step: " << events_in_step ENDL;
       dout() << "ALGORITHM PHASE I: Exit \"from\" states" ENDL;
       ++debug_indent_;
     }
