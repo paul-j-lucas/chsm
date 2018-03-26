@@ -217,7 +217,9 @@ static lang parse_lang( char const *s ) {
   typedef unordered_map<string,lang> lang_map_type;
   static lang_map_type const lang_map {
     { "c++",  lang::CPP   },
+#ifdef ENABLE_JAVA
     { "java", lang::JAVA  },
+#endif /* ENABLE_JAVA */
   };
   assert( s != nullptr );
   auto const found = lang_map.find( PJL::tolower( s ) );
