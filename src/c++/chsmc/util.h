@@ -48,7 +48,7 @@ namespace PJL {
 ///////////////////////////////////////////////////////////////////////////////
 
 /** Gets the number of elements of the given array. */
-#define ARRAY_SIZE(A)             (sizeof(A) / sizeof(A[0]))
+#define ARRAY_SIZE(A)             (sizeof(A) / sizeof(0[A]))
 
 /** Embeds the given statements into a compount statement block. */
 #define BLOCK(...)                do { __VA_ARGS__ } while (0)
