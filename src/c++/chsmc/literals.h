@@ -26,6 +26,11 @@
  * Declares constants for CHSM and C++ language literals.
  */
 
+#ifdef L_SET
+// Some platforms #define L_SET as a synonym for SEEK_SET.
+#undef L_SET
+#endif /* L_SET */
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // CHSM
