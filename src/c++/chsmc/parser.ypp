@@ -159,8 +159,8 @@ static ostream& elaborate_error() {
   if ( cc.error_newlined )
     return cc.dev_null;
   cerr << ": ";
-  if ( lexer::get().token[0] )
-    cerr << '"' << lexer::get().token << "\": ";
+  if ( lexer::instance().token[0] )
+    cerr << '"' << lexer::instance().token << "\": ";
   cerr << endl;
   cc.error_newlined = true;
   return cerr;
@@ -687,12 +687,12 @@ event_description
       //
       // Let the lexical analyzer know that we're doing conditions.
       //
-      lexer::get().push_state( lexer::TOKENIZE_CONDITION );
+      lexer::instance().push_state( lexer::TOKENIZE_CONDITION );
     }
     argument_list_opt event_precondition_opt semi_expected
     {
       yyerrok;
-      lexer::get().pop_state();
+      lexer::instance().pop_state();
       POP_PTR( param_data, pd );
       POP_SYMBOL( sy_event );
     }
@@ -863,11 +863,11 @@ transition_type
       //
       // Let the lexical analyzer know that we're doing conditions.
       //
-      lexer::get().push_state( lexer::TOKENIZE_CONDITION );
+      lexer::instance().push_state( lexer::TOKENIZE_CONDITION );
     }
     transition_target
     {
-      lexer::get().pop_state();
+      lexer::instance().pop_state();
     }
     action_block_opt
 
@@ -927,11 +927,11 @@ event_condition_spec
       //
       // Let the lexical analyzer know that we're doing conditions.
       //
-      lexer::get().push_state( lexer::TOKENIZE_CONDITION );
+      lexer::instance().push_state( lexer::TOKENIZE_CONDITION );
     }
     event_condition_opt
     {
-      lexer::get().pop_state();
+      lexer::instance().pop_state();
       POP_INT( condition_id );
       POP_SYMBOL( sy_event );
       POP_INT( n );
@@ -1088,7 +1088,7 @@ scope_resolver_opt
 
   | Y_DOTS
     {
-      size_t dots = ::strlen( lexer::get().token );
+      size_t dots = ::strlen( lexer::instance().token );
       if ( dots > symbol_table::scope() ) {
         cc.source_->warning() << "dots exceed current scope-depth\n";
         dots = symbol_table::scope();
@@ -1113,7 +1113,7 @@ substates_opt
 
   | Y_SUBSTATES
     {
-      PUSH_STRING( lexer::get().token );
+      PUSH_STRING( lexer::instance().token );
     }
   ;
 
@@ -1196,11 +1196,11 @@ argument_list_opt
   | '(' ')'
   | '('
     {
-      lexer::get().push_state( lexer::TOKENIZE_ARG_LIST );
+      lexer::instance().push_state( lexer::TOKENIZE_ARG_LIST );
     }
     arg_decl_list ')'
     {
-      lexer::get().pop_state();
+      lexer::instance().pop_state();
     }
   ;
 
@@ -1210,11 +1210,12 @@ arg_cat
     ** text of the declaration so it can later be emitted into the generated
     ** code in user-event paramater declarations.  To do this, we insert a
     ** "subroutine" production, arg_cat, after every terminal to concatenate
-    ** the text in lexer::get().token to the declaration we're reconstructing.
+    ** the text in lexer::instance().token to the declaration we're
+    ** reconstructing.
     */
   : /* empty */
     {
-      cc.arg_.cat( lexer::get().token );
+      cc.arg_.cat( lexer::instance().token );
       cc.arg_.cat( ' ' );
     }
   ;
@@ -1360,7 +1361,7 @@ decl_identifier
     */
   : Y_IDENTIFIER
     {
-      ::strcpy( cc.arg_.ident_[ cc.arg_.got_variable_ ], lexer::get().token );
+      ::strcpy( cc.arg_.ident_[ cc.arg_.got_variable_ ], lexer::instance().token );
     }
   ;
 
@@ -1498,7 +1499,7 @@ identifier
     */
   : Y_IDENTIFIER
     {
-      PUSH_SYMBOL( &cc.sym_table_[ lexer::get().token ] );
+      PUSH_SYMBOL( &cc.sym_table_[ lexer::instance().token ] );
     }
   ;
 
@@ -1514,11 +1515,11 @@ derived_class_spec_opt
   | '<'
     {
       cc.arg_.init( cc.source_->line_no_ );
-      lexer::get().push_state( lexer::TOKENIZE_ARG_LIST );
+      lexer::instance().push_state( lexer::TOKENIZE_ARG_LIST );
     }
     complete_class_name '>'
     {
-      lexer::get().pop_state();
+      lexer::instance().pop_state();
       PUSH_STRING( cc.arg_.decl_ );
     }
 

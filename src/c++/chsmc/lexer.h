@@ -45,7 +45,7 @@ public:
    *
    * @return Returns said %lexer.
    */
-  static lexer& get();
+  static lexer& instance();
 
   /**
    * Gets the current tokenization state.

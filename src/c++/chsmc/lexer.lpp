@@ -84,7 +84,7 @@
  * @hideinitializer
  */
 #define RETURN(TOKEN) \
-  BLOCK( lexer::get().token = ::yytext; return (TOKEN); )
+  BLOCK( lexer::instance().token = ::yytext; return (TOKEN); )
 
 /**
  * Echo the current lexer text to the target file.
@@ -167,8 +167,8 @@ static keyword const KEYWORDS[] = {     // in alphabetical order
 };
 
 // local variables
-static unsigned     bracket_count;      ///< Balances `[]` in conditions.
 static unsigned     just_did_ident;     ///< Used during substate processing.
+static unsigned     parens_depth;       ///< Balances `()`, `[]`
 static scond_stack  sconds;             ///< Start-condition stack.
 
 ////////// local functions ////////////////////////////////////////////////////
@@ -265,12 +265,18 @@ extern "C" {
 %s EMBED
 
 /**
- * Both the TEMPLATE and the VECTOR states are used between `(` and `)` for
- * event parameter declarations that are C++ declarations.  Text between `<`
- * and `>` for TEMPLATE and `[` and `]` for VECTOR is irrelevant as far as
- * we're concerned, so it is passed along to the underlying C++ compiler.
+ * The ANGLE state is used between `<` and `>` for template declarations.  The
+ * text is irrelevant as far as we're concerned, so it is passed along to the
+ * underlying C++ compiler.
  */
-%s TEMPLATE VECTOR
+%s ANGLE
+
+/**
+ * The BRACKET state is used between `[` and `]` for vector declarations.  The
+ * text is irrelevant as far as we're concerned, so it is passed along to the
+ * underlying C++ compiler.
+ */
+%s BRACKET
 
 /**
  * Used after the second `%%`, if any.  Once in this state, all text is copied
@@ -317,7 +323,7 @@ substates   (\.{identifier})+
 <INITIAL,DONE>.+          { T_ECHO; }
 
 <INITIAL>\n               { ++cc.source_->line_no_; T_ECHO; }
-<MAIN,TEMPLATE,VECTOR>\n  { ++cc.source_->line_no_; }
+<MAIN,ANGLE,BRACKET>\n    { ++cc.source_->line_no_; }
 <COND,CODE,EMBED>\n       { ++cc.source_->line_no_; U_ECHO; }
 <MAIN,EMBED>{S}+          { /* nothing */; }
 
@@ -392,22 +398,22 @@ substates   (\.{identifier})+
                             // still have to count and balance []'s to know
                             // when to stop the covert activity.
                             //
-                            switch ( lexer::get().state() ) {
+                            switch ( lexer::instance().state() ) {
                               case lexer::TOKENIZE_NORMAL:
                                 break;
                               case lexer::TOKENIZE_ARG_LIST:
-                                BEGIN( VECTOR );
+                                BEGIN( BRACKET );
                                 break;
                               case lexer::TOKENIZE_CONDITION:
                                 BEGIN( COND );
                                 break;
                             } // switch
-                            bracket_count = 1;
+                            parens_depth = 1;
                             RETURN( ::yytext[0] );
                           }
 
 <COND>"]"                 {
-                            if ( --bracket_count == 0 ) {
+                            if ( --parens_depth == 0 ) {
                               //
                               // The []'s are now balanced: return to our
                               // normal state.
@@ -419,8 +425,8 @@ substates   (\.{identifier})+
                             }
                           }
 
-<VECTOR>"]"               {
-                            if ( --bracket_count == 0 ) {
+<BRACKET>"]"              {
+                            if ( --parens_depth == 0 ) {
                               //
                               // The []'s are now balanced: return to our
                               // normal state.  Note that ::yytext contains all
@@ -444,19 +450,19 @@ substates   (\.{identifier})+
                             // count and balance <>'s to know when to stop the
                             // covert activity.
                             //
-                            switch ( lexer::get().state() ) {
+                            switch ( lexer::instance().state() ) {
                               case lexer::TOKENIZE_ARG_LIST:
-                                BEGIN( TEMPLATE );
+                                BEGIN( ANGLE );
                                 break;
                               default:
                                 /* suppress warning */;
                             } // switch
-                            bracket_count = 1;
+                            parens_depth = 1;
                             RETURN( ::yytext[0] );
                           }
 
-<TEMPLATE>">"             {
-                            if ( --bracket_count == 0 ) {
+<ANGLE>">"                {
+                            if ( --parens_depth == 0 ) {
                               //
                               // The <>'s are now balanced: return to our
                               // normal state.  Note that ::yytext contains all
@@ -469,11 +475,11 @@ substates   (\.{identifier})+
                             }
                           }
 
-<COND>"["                 { ++bracket_count; U_ECHO; }
-<TEMPLATE>"<"             |
-<VECTOR>"["               { ++bracket_count; yymore(); }
-<TEMPLATE>[^>\n]+         |
-<VECTOR>[^\]\n]+          { yymore(); }
+<COND>"["                 { ++parens_depth; U_ECHO; }
+<ANGLE>"<"                |
+<BRACKET>"["              { ++parens_depth; yymore(); }
+<ANGLE>[^>\n]+            |
+<BRACKET>[^\]\n]+         { yymore(); }
 
 <MAIN>[,;()>{}]           |
 <EMBED>[,({]              { RETURN( ::yytext[0] ); }
@@ -501,7 +507,7 @@ lexer::lexer() : state_( TOKENIZE_NORMAL ), stack_p_( -1 ) {
   // no nothing else
 }
 
-lexer& lexer::get() {
+lexer& lexer::instance() {
   static lexer singleton;
   return singleton;
 }
