@@ -47,7 +47,7 @@
 .PP
 ..
 .\" ---------------------------------------------------------------------------
-.TH \f3CHSM-C++\fP 4 "January 18, 2018" "CHSM" "CHSM Language System"
+.TH \f3CHSM-C++\fP 4 "June 13, 2018" "CHSM" "CHSM Language System"
 .SH "NAME"
 CHSM-C++ \- Concurrent, Hierarchical, Finite State Machine specification language for C++
 .SH "SYNOPSIS"
@@ -791,14 +791,14 @@ chsm my_machine is {
     }
 }
 .cE
-If the \f(CW${\f2state-name\fP}\fP notation were not used,
+If the \f(CW${\f2state-name\fP}\f1 notation were not used,
 the fully-qualified state name would need to be used instead:
 .cS
                 c.s.member_function();
 .cE
 This notation also permits the scope-resolution operators to be used
 inside of it.
-.SS "\f(CW$enter(\f2state-name\fP)\fP, \f(CW$exit(\f2state-name\fP)\fP"
+.SS "\f(CW$enter(\f2state-name\fP)\f1, \f(CW$exit(\f2state-name\fP)\f1"
 Refers to the enter/exit event of
 .I state-name
 (instead of the C++ library function \f(CWexit()\fP, for example):
@@ -808,7 +808,7 @@ Refers to the enter/exit event of
                 // ...
         %};
 .cE 0
-.SS "\f(CW$in(\fP \f2state-name\fP \f(CW)\fP"
+.SS "\f(CW$in(\fP\f2state-name\fP\f(CW)\fP"
 Returns \f(CWtrue\fP only if the CHSM is in the state
 .IR state-name :
 .cS
