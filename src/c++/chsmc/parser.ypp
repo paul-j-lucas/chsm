@@ -31,6 +31,7 @@
 #include "event_info.h"
 #include "global_info.h"
 #include "lexer.h"
+#include "literals.h"
 #include "mangle.h"
 #include "options.h"
 #include "semantic.h"
@@ -88,6 +89,8 @@
 #define TOP_PTR(TYPE,VAR)         PEEK_PTR( TYPE, VAR, 0 )
 #define TOP_SYMBOL(VAR)           PEEK_SYMBOL( VAR, 0 )
 #define TOP_TYPE(TYPE,VAR)        PEEK_TYPE( TYPE, VAR, 0 )
+
+#define QUOTE(X)                  '"' << (X) << '"'
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -161,7 +164,6 @@ static ostream& elaborate_error() {
   cerr << ": ";
   if ( lexer::instance().token[0] )
     cerr << '"' << lexer::instance().token << "\": ";
-  cerr << endl;
   cc.error_newlined = true;
   return cerr;
 }
@@ -299,7 +301,7 @@ chsm
 
   | error
     {
-      elaborate_error() << "no \"%%\" ever encountered";
+      elaborate_error() << "no \"%%\" ever encountered\n";
     }
   ;
 
@@ -325,7 +327,7 @@ chsm_description
       PUSH_SYMBOL( cc.sy_chsm_ );
       PUSH( static_cast<param_data*>( CHSM ) );
     }
-    argument_list_opt
+    parameter_list_opt
     {
       POP_PTR( param_data, pd );
       if ( pd->param_list_.size() && CHSM->derived_.empty() )
@@ -345,12 +347,12 @@ chsm_description
 
   | public_opt Y_CHSM error
     {
-      elaborate_error() << "chsm name expected";
+      elaborate_error() << "chsm name expected\n";
     }
 
   | error
     {
-      elaborate_error() << "\"chsm\" expected";
+      elaborate_error() << QUOTE(L_CHSM) << " expected\n";
     }
   ;
 
@@ -412,7 +414,7 @@ body
 
   | error
     {
-      elaborate_error() << "\"is\" expected";
+      elaborate_error() << QUOTE(L_IS) << " expected\n";
     }
   ;
 
@@ -428,7 +430,7 @@ description
   | event_description
   | error
     {
-      elaborate_error() << "description expected";
+      elaborate_error() << "description expected\n";
     }
   ;
 
@@ -612,7 +614,7 @@ state_declaration
 
   | derived_class_spec_opt error
     {
-      elaborate_error() << "name expected in state declaration";
+      elaborate_error() << "name expected in state declaration\n";
       // clean up as best as possible
       PUSH_SYMBOL( &sy_dummy_state );
     }
@@ -630,7 +632,7 @@ child_declaration
 
   | error
     {
-      elaborate_error() << "child list expected after cluster/set name";
+      elaborate_error() << "child list expected after cluster/set name\n";
     }
   ;
 
@@ -665,7 +667,7 @@ child
 
   | error
     {
-      elaborate_error() << "child name expected (extra ','?)";
+      elaborate_error() << "child name expected (extra ','?)\n";
     }
   ;
 
@@ -689,7 +691,7 @@ event_description
       //
       lexer::instance().push_state( lexer::TOKENIZE_CONDITION );
     }
-    argument_list_opt event_precondition_opt semi_expected
+    parameter_list_opt event_precondition_opt semi_expected
     {
       yyerrok;
       lexer::instance().pop_state();
@@ -700,7 +702,7 @@ event_description
   | Y_EVENT error ';'
     {
       yyerrok;
-      elaborate_error() << "event name expected";
+      elaborate_error() << "event name expected\n";
     }
   ;
 
@@ -716,12 +718,12 @@ base_event_spec_opt
   | '<' base_event error '>'
     {
       yyerrok;
-      elaborate_error() << "error in base event specification";
+      elaborate_error() << "error in base event specification\n";
     }
   | '<' error '>'
     {
       yyerrok;
-      elaborate_error() << "base event name expected";
+      elaborate_error() << "base event name expected\n";
       PUSH_SYMBOL( nullptr );
     }
   ;
@@ -903,7 +905,7 @@ transition_target
 
   | error
     {
-      elaborate_error() << "state name or expression expected";
+      elaborate_error() << "state name or expression expected\n";
     }
   ;
 
@@ -942,7 +944,7 @@ event_condition_spec
 
   | error
     {
-      elaborate_error() << "event expected in transition";
+      elaborate_error() << "event expected in transition\n";
     }
   ;
 
@@ -1006,7 +1008,9 @@ enter_exit_action
 
   | Y_UPON error
     {
-      elaborate_error() << "\"enter\" or \"exit\" expected after \"upon\"";
+      elaborate_error()
+        << QUOTE(L_ENTER) << " or " << QUOTE(L_EXIT)
+        << " expected after " << QUOTE(L_UPON) << '\n';
     }
     "%{" /* ... */ "%}"
   ;
@@ -1175,10 +1179,10 @@ user_event
   ;
 
 /*****************************************************************************/
-/*  Argument lists                                                           */
+/*  Parameter lists                                                          */
 /*****************************************************************************/
 
-argument_list_opt
+parameter_list_opt
     /*
     ** This part of the grammar to parse parameter declarations had the C++
     ** grammar in the ARM for argument declarations, sections 17.3 and 17.4, as
@@ -1206,7 +1210,7 @@ argument_list_opt
 
 arg_cat
     /*
-    ** During argument declaration list parsing, we have to reconstruct the
+    ** During parameter declaration list parsing, we have to reconstruct the
     ** text of the declaration so it can later be emitted into the generated
     ** code in user-event paramater declarations.  To do this, we insert a
     ** "subroutine" production, arg_cat, after every terminal to concatenate
@@ -1303,7 +1307,7 @@ complete_class_name
   | "::" arg_cat qualified_class_name arg_cat_ident
   | "::" error
     {
-      elaborate_error() << "class name expected after \"::\"";
+      elaborate_error() << "class name expected after " << QUOTE("::") << '\n';
     }
   ;
 
@@ -1329,7 +1333,7 @@ qualified_class_name
 
   | class_name "::" error               /* C++ only */
     {
-      elaborate_error() << "class name expected after \"::\"";
+      elaborate_error() << "class name expected after " << QUOTE("::") << '\n';
     }
 
   | class_name Y_DOTS arg_cat_ident     /* Java only */
@@ -1344,7 +1348,7 @@ qualified_class_name
 
   | class_name Y_DOTS error             /* Java only */
     {
-      elaborate_error() << "class name expected after \".\"";
+      elaborate_error() << "class name expected after " << QUOTE(".") << '\n';
     }
   ;
 
@@ -1368,8 +1372,8 @@ decl_identifier
 template_args_opt
     /*
     ** Since the identifier for the variable name can not possibly be between <
-    ** and > template arguments, let lex reduce all that down to a single token
-    ** thus simplifying the grammar.
+    ** and > template parameters, let lex reduce all that down to a single
+    ** token thus simplifying the grammar.
     */
   : /* empty */
   | '<' arg_cat_ident arg_cat /* anything */ '>' arg_cat
@@ -1391,7 +1395,7 @@ declarator
     ** C++ & Java vector declarations:
     **      T d[ ... ]
     **
-    ** Similarly to < and > for template arguments, the identifier for the
+    ** Similarly to < and > for template parameters, the identifier for the
     ** variable name can not possibly be between [ and ] vector dimensions;
     ** therefore, let lex reduce all that down to a single token thus
     ** simplifying the grammar.
@@ -1441,7 +1445,7 @@ declarator
 
   | error
     {
-      elaborate_error() << "variable name expected in argument declaration";
+      elaborate_error() << "variable name expected in parameter declaration\n";
     }
   ;
 
@@ -1526,7 +1530,7 @@ derived_class_spec_opt
   | '<' error '>'
     {
       yyerrok;
-      elaborate_error() << "derived class expected";
+      elaborate_error() << "derived class expected\n";
       PUSH_STRING( nullptr );
     }
   ;
@@ -1541,7 +1545,7 @@ embedded_identifier
   | embedded_state_name
   | '$' error
     {
-      elaborate_error() << "invalid keyword after '$'";
+      elaborate_error() << "invalid keyword after '$'\n";
     }
   ;
 
@@ -1612,7 +1616,7 @@ embedded_keyword
   | Y_IN                          { PUSH( Y_IN ); }
   | error
     {
-      elaborate_error() << "invalid keyword after '$'";
+      elaborate_error() << "invalid keyword after '$'\n";
       PUSH( 0 );
     }
   ;
@@ -1666,14 +1670,14 @@ comma_expected
   : ','
   | error
     {
-      elaborate_error() << "',' expected";
+      elaborate_error() << "',' expected\n";
     }
   ;
 
 event_name_error
   : error
     {
-      elaborate_error() << "event name expected";
+      elaborate_error() << "event name expected\n";
     }
   ;
 
@@ -1681,7 +1685,7 @@ semi_expected
   : ';'
   | error
     {
-      elaborate_error() << "';' expected";
+      elaborate_error() << "';' expected\n";
     }
   ;
 
@@ -1689,7 +1693,7 @@ lparen_expected
   : '('
   | error
     {
-      elaborate_error() << "'(' expected";
+      elaborate_error() << "'(' expected\n";
     }
   ;
 
@@ -1697,7 +1701,7 @@ rparen_expected
   : ')'
   | error
     {
-      elaborate_error() << "')' expected";
+      elaborate_error() << "')' expected\n";
     }
   ;
 
@@ -1705,7 +1709,7 @@ lbrace_expected
   : '{'
   | error
     {
-      elaborate_error() << "'{' expected";
+      elaborate_error() << "'{' expected\n";
     }
   ;
 
@@ -1713,14 +1717,14 @@ rbrace_expected
   : '}'
   | error
     {
-      elaborate_error() << "'}' expected";
+      elaborate_error() << "'}' expected\n";
     }
   ;
 
 state_name_error
   : error
     {
-      elaborate_error() << "state name expected";
+      elaborate_error() << "state name expected\n";
     }
   ;
 
