@@ -85,7 +85,7 @@ protected:
  */
 chsm<stack_machine> grid is {
 
-  cluster location(nw,n,ne,w,c,e,sw,s,se) {
+  cluster loc(nw,n,ne,w,c,e,sw,s,se) {
     //
     // By using an outer cluster, we can specify what to do upon an undo event
     // once.

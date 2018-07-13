@@ -34,8 +34,8 @@
 using namespace PJL;
 using namespace std;
 
-static semantic stack[ 100 ];
-static int      stack_p = -1;
+static semantic sem_stack[ 100 ];
+static int      sem_stack_p = -1;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -75,19 +75,19 @@ void semantic::check_tag( semantic::type_tag t, void const *p ) const {
 
 template<typename T>
 void stack_push( T v ) {
-  stack[ ++stack_p ] = v;
+  sem_stack[ ++sem_stack_p ] = v;
 }
 
 template<typename T>
 void stack_pop( T *v ) {
-  assert( stack_p >= 0 );
-  *v = stack[ stack_p-- ];
+  assert( sem_stack_p >= 0 );
+  *v = sem_stack[ sem_stack_p-- ];
 }
 
 template<typename T>
 void stack_peek( T *v, unsigned depth ) {
-  assert( static_cast<decltype(stack_p)>( depth ) <= stack_p );
-  *v = stack[ stack_p - depth ];
+  assert( static_cast<decltype(sem_stack_p)>( depth ) <= sem_stack_p );
+  *v = sem_stack[ sem_stack_p - depth ];
 }
 
 void push_line( int i, unsigned line ) {

@@ -38,11 +38,11 @@ import java.util.Stack;
  */
 class StackMachine extends CHSM.Machine {
 
-  public void push_state( CHSM.State s ) {
+  public void pushState( CHSM.State s ) {
     state_stack_.push( s );
   }
 
-  public CHSM.State pop_state() {
+  public CHSM.State popState() {
     if ( state_stack_.empty() )
       return null;
     return state_stack_.pop();
@@ -78,7 +78,7 @@ class PushOnExit extends CHSM.State {
     // undo and the state would flip-flop.
     //
     if ( !( trigger instanceof Grid_3x3.undoEvent ) )
-      ((StackMachine)machine()).push_state( this );
+      ((StackMachine)machine()).pushState( this );
     return true;
   }
 }
@@ -93,12 +93,12 @@ class PushOnExit extends CHSM.State {
  */
 chsm<StackMachine> Grid_3x3 is {
 
-  cluster location(nw,n,ne,w,c,e,sw,s,se) {
+  cluster loc(nw,n,ne,w,c,e,sw,s,se) {
     //
     // By using an outer cluster, we can specify what to do upon an undo event
     // once.
     //
-    undo -> [ pop_state() ];
+    undo -> [ popState() ];
   } is {
     state<PushOnExit> c {
       north -> n;

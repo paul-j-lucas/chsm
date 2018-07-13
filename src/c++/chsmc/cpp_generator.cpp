@@ -56,7 +56,7 @@ private:
   void emit_common( event_info const &si );
 
   void emit_common( parent_info const &si,
-                    char const *formal_args = nullptr );
+                    char const *formal_params = nullptr );
 
   void emit() override;
   void visit( chsm_info const& ) override;
@@ -118,8 +118,8 @@ private:
   void emit_common( event_info const &si );
 
   void emit_common( parent_info const &si,
-                    char const *formal_args = nullptr,
-                    char const *actual_args = nullptr );
+                    char const *formal_params = nullptr,
+                    char const *actual_params = nullptr );
 
   void emit_events();
   void emit_states();
@@ -416,7 +416,7 @@ void cpp_declarer::emit_common( event_info const &si ) {
 }
 
 void cpp_declarer::emit_common( parent_info const &si,
-                                char const *formal_args ) {
+                                char const *formal_params ) {
   symbol const *const sy = si.get_symbol();
   char const *const base_name = state_base_name( sy->name() );
 
@@ -442,8 +442,8 @@ void cpp_declarer::emit_common( parent_info const &si,
   T_OUT << indent(2)
         << PARENT_CLASS_PREFIX << base_name << "( CHSM_STATE_ARGS";
 
-  if ( formal_args != nullptr )
-    T_OUT << ", " << formal_args;
+  if ( formal_params != nullptr )
+    T_OUT << ", " << formal_params;
 
   T_OUT << " );" T_ENDL
         << indent << "private:" T_ENDL
@@ -597,7 +597,7 @@ void cpp_declarer::visit( user_event_info const &si ) {
   for ( auto const &param : si.param_list_ ) {
     emit_source_line_no( T_OUT, param.line_no_ );
     T_OUT << indent(3)
-          << si.stuff_decl( param.declaration_, "", param.variable_ )
+          << si.stuff_decl( param.declaration_, "", param.name_ )
           << ';' T_ENDL;
   } // for
 
@@ -695,8 +695,8 @@ void cpp_definer::emit_common( event_info const &si ) {
 }
 
 void cpp_definer::emit_common( parent_info const &si,
-                               char const *formal_args,
-                               char const *actual_args ) {
+                               char const *formal_params,
+                               char const *actual_params ) {
   symbol const *const sy = si.get_symbol();
   char const *const name = sy->name();
 
@@ -741,14 +741,14 @@ void cpp_definer::emit_common( parent_info const &si,
         << PARENT_CLASS_PREFIX
         << state_base_name( name ) << "( CHSM_STATE_ARGS";
 
-  if ( formal_args != nullptr )
-    T_OUT << ", " << formal_args;
+  if ( formal_params != nullptr )
+    T_OUT << ", " << formal_params;
 
   T_OUT << " ) :" T_ENDL
         << indent << lib_class_name( si ) << "( CHSM_STATE_INIT, children_";
 
-  if ( actual_args != nullptr )
-    T_OUT << ", " << actual_args;
+  if ( actual_params != nullptr )
+    T_OUT << ", " << actual_params;
 
   T_OUT << " )";
 
@@ -941,8 +941,8 @@ void cpp_definer::visit( user_event_info const &si ) {
     //
     // emit param_block constructor definition
     //
-    // The parameter formal argument names can not have the same names as the
-    // data members, so we prefix each one by a string, i.e.:
+    // The formal parameter names can not have the same names as the data
+    // members, so we prefix each one by a string, i.e.:
     //
     //      param_block( T Pparam ) : param( Pparam ) { }
     //                     ^                 ^
@@ -969,8 +969,8 @@ void cpp_definer::visit( user_event_info const &si ) {
     T_OUT << " )";
 
     for ( auto const &param : si.param_list_ )
-      T_OUT << ", " << param.variable_ << "( "
-            << param_data::PARAM_PREFIX_ << param.variable_ << " )";
+      T_OUT << ", " << param.name_ << "( "
+            << param_data::PARAM_PREFIX_ << param.name_ << " )";
 
     T_OUT T_ENDL
           << '{' T_ENDL

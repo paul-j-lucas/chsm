@@ -152,7 +152,7 @@ private:
   void emit_common( event_info const &si );
 
   void emit_common( parent_info const &si,
-                    char const *actual_args = nullptr );
+                    char const *actual_params = nullptr );
 
   void emit_events();
   void emit_states();
@@ -185,7 +185,7 @@ public:
   void emit_common( event_info const &si );
 
   void emit_common( parent_info const &si,
-                    char const *formal_args = nullptr );
+                    char const *formal_params = nullptr );
 
   void emit() override;
   void visit( chsm_info const& ) override;
@@ -486,7 +486,7 @@ void java_declarer::emit_common( event_info const &si ) {
 }
 
 void java_declarer::emit_common( parent_info const &si,
-                                 char const *formal_args ) {
+                                 char const *formal_params ) {
   symbol const *const sy = si.get_symbol();
   char const *const base_name = state_base_name( sy->name() );
 
@@ -517,8 +517,8 @@ void java_declarer::emit_common( parent_info const &si,
   // emit constructor declaration
   T_OUT << indent(2) << STATE_CLASS_PREFIX << base_name
         << "( " CHSM_STATE_ARGS;
-  if ( formal_args != nullptr )
-    T_OUT << ", " << formal_args;
+  if ( formal_params != nullptr )
+    T_OUT << ", " << formal_params;
   T_OUT << " ) {" T_ENDL;
 
   INFO_CONST( state, sy )->accept( *java_definer_ );
@@ -699,7 +699,7 @@ void java_declarer::visit( user_event_info const &si ) {
         << base_class_name( si ) << ".ParamBlock {" T_ENDL;
   for ( auto const &param : si.param_list_ ) {
     T_OUT << indent(3)
-          << si.stuff_decl( param.declaration_, "", param.variable_ )
+          << si.stuff_decl( param.declaration_, "", param.name_ )
           << ';' T_ENDL;
   } // for
 
@@ -786,10 +786,10 @@ void java_definer::emit_common( event_info const &si ) {
 }
 
 void java_definer::emit_common( parent_info const &si,
-                                char const *actual_args ) {
+                                char const *actual_params ) {
   T_OUT << indent(3) << "super( " CHSM_STATE_INIT ", children_";
-  if ( actual_args != nullptr )
-    T_OUT << ", " << actual_args;
+  if ( actual_params != nullptr )
+    T_OUT << ", " << actual_params;
   T_OUT << " );" T_ENDL;
 
   if ( &si != INFO_CONST( parent, SY_ROOT ) ) {
@@ -889,8 +889,8 @@ void java_definer::visit( user_event_info const &si ) {
     //
     // emit ParamBlock constructor definition
     //
-    // The parameter formal argument names can not have the same names as the
-    // data members, so we prefix each one by a string, i.e.:
+    // The formal parameter names can not have the same names as the data
+    // members, so we prefix each one by a string, i.e.:
     //
     //      ParamBlock( T Pparam ) : param( Pparam ) { }
     //                    ^                 ^

@@ -36,8 +36,8 @@ class list_sep;                         /* in list_sep.h */
  */
 struct param_data {
   /*
-   * Gives parameter formal argument names a different name from the data
-   * members.  For example:
+   * Gives formal parameter names a different name from the data members.  For
+   * example:
    *
    *      param_block( T Pparam ) : param( Pparam ) { }
    *                     ^                 ^
@@ -53,7 +53,7 @@ struct param_data {
    * we store it as:
    *
    *      declaration: T (*const $)( U )
-   *      variable   : foo
+   *      name       : foo
    *
    * See the comments for the `arg_cat` and `arg_cat_ident` productions in
    * `parser.ypp`.
@@ -61,10 +61,10 @@ struct param_data {
   struct param {
     unsigned const    line_no_;         ///< Line number of declaration.
     std::string const declaration_;     ///< Parameter declaration.
-    std::string const variable_;        ///< Parameter name.
+    std::string const name_;            ///< Parameter name.
 
-    param( unsigned line_no, char const *declaration, char const *variable ) :
-      line_no_( line_no ), declaration_( declaration ), variable_( variable )
+    param( unsigned line_no, char const *declaration, char const *name ) :
+      line_no_( line_no ), declaration_( declaration ), name_( name )
     {
     }
   };

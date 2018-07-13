@@ -52,14 +52,14 @@ ostream& param_data::emit_param_list_aux( ostream &o, list_sep &comma,
       // Emit an actual parameter list, i.e., just the names.
       //
       o << ((emit_flags & EMIT_PREFIX) != 0 ? PARAM_PREFIX_ : "")
-        << param.variable_;
+        << param.name_;
     } else {
       //
       // Emit a formal parameter list, i.e., the types and names.
       //
       o << stuff_decl( param.declaration_,
         ((emit_flags & EMIT_PREFIX) != 0 ? PARAM_PREFIX_ : ""),
-        ((emit_flags & EMIT_FORMAL) != 0 ? param.variable_ : "")
+        ((emit_flags & EMIT_FORMAL) != 0 ? param.name_ : "")
       );
     }
   } // for
