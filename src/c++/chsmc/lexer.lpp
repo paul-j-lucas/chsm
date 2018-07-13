@@ -503,8 +503,11 @@ substates   (\.{identifier})+
 
 ///////////////////////////////////////////////////////////////////////////////
 
-lexer::lexer() : state_( TOKENIZE_NORMAL ), stack_p_( -1 ) {
-  // no nothing else
+lexer::lexer() :
+  token( nullptr ),
+  state_( TOKENIZE_NORMAL ),
+  stack_p_( -1 )
+{
 }
 
 lexer& lexer::instance() {

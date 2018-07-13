@@ -597,7 +597,7 @@ void cpp_declarer::visit( user_event_info const &si ) {
   for ( auto const &param : si.param_list_ ) {
     emit_source_line_no( T_OUT, param.line_no_ );
     T_OUT << indent(3)
-          << si.stuff_decl( param.declaration_, "", param.name_ )
+          << si.stuff_decl( param.decl_, "", param.name_ )
           << ';' T_ENDL;
   } // for
 

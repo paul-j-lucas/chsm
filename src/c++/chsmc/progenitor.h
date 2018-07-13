@@ -33,7 +33,7 @@ namespace PJL {
  * Two things are required of the derived classes:
  *
  *  1. Defines a copy constructor that also takes an additional "deep"
- *     argument.  It, in turn, calls its base class's copy constructor.
+ *     parameter.  It, in turn, calls its base class's copy constructor.
  *
  *  2. Uses the `PROCREATE` macro.
  *

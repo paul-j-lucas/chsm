@@ -33,15 +33,11 @@
 // standard
 #include <cassert>
 #include <cstdlib>                      /* for exit(3) */
-#include <getopt.h>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <sysexits.h>
 #include <unordered_map>
-
-#define GAVE_OPTION(OPT)          (opts_given[ (unsigned char)(OPT) ])
-#define SET_OPTION(OPT)           (opts_given[ (unsigned char)(OPT) ] = (OPT))
 
 /// @endcond
 
@@ -111,6 +107,27 @@ static string       format_opt( char );
 static char const*  get_long_opt( char );
 static void         usage();
 
+////////// inline functions ///////////////////////////////////////////////////
+
+/**
+ * Gets whether \a opt was given.
+ *
+ * @param opt The short option character to check for.
+ * @return Returns `true` only if \a opt was given.
+ */
+inline bool options_gave( char opt ) {
+  return opts_given[ static_cast<unsigned char>( opt ) ] != '\0';
+}
+
+/**
+ * Marks an option as having been given.
+ *
+ * @param opt The short option character that was given.
+ */
+inline void mark_option( char opt ) {
+  opts_given[ static_cast<unsigned char>( opt ) ] = opt;
+}
+
 ////////// local functions ////////////////////////////////////////////////////
 
 /**
@@ -131,7 +148,7 @@ static void check_mutually_exclusive( char const *opts1, char const *opts2 ) {
 
   for ( unsigned i = 0; i < 2; ++i ) {
     for ( ; *opt != '\0'; ++opt ) {
-      if ( GAVE_OPTION( *opt ) ) {
+      if ( options_gave( *opt ) ) {
         if ( ++gave_count > 1 ) {
           char const gave_opt2 = *opt;
           PMESSAGE_EXIT( EX_USAGE,
@@ -162,9 +179,9 @@ static void check_required( char const *opts, char const *req_opts ) {
   assert( req_opts != nullptr );
 
   for ( char const *opt = opts; *opt; ++opt ) {
-    if ( GAVE_OPTION( *opt ) ) {
+    if ( options_gave( *opt ) ) {
       for ( char const *req_opt = req_opts; *req_opt; ++req_opt )
-        if ( GAVE_OPTION( *req_opt ) )
+        if ( options_gave( *req_opt ) )
           return;
       bool const reqs_multiple = strlen( req_opts ) > 1;
       PMESSAGE_EXIT( EX_USAGE,
@@ -243,19 +260,15 @@ static void parse_options( int *pargc, char const ***pargv ) {
   bool print_version = false;
 
 	for (;;) {
-    int const opt = getopt_long(
-      *pargc, const_cast<char**>( *pargv ), SHORT_OPTS, LONG_OPTS, nullptr
-    );
-    if ( opt == -1 )
+    char const opt = options_get( pargc, pargv, SHORT_OPTS, LONG_OPTS );
+    if ( opt == '\0' )
       break;
-    SET_OPTION( opt );
     switch ( opt ) {
       case 'h': opt_lang              = lang::CPP;      // no break;
       case 'd': opt_declaration_file  = optarg;               break;
 
       case 'c': opt_lang              = lang::CPP;      // no break;
       case 'D': opt_definition_file   = optarg;               break;
-                opt_definition_file   = optarg;               break;
 
 #ifdef ENABLE_JAVA
       case 'j': opt_lang = lang::JAVA;
@@ -276,7 +289,6 @@ static void parse_options( int *pargc, char const ***pargv ) {
       default : usage();
     } // switch
   } // for
-  *pargc -= ::optind, *pargv += ::optind;
 
   check_mutually_exclusive( "ch", "jx" );
   check_mutually_exclusive( "E", "cdDhj" );
@@ -325,6 +337,19 @@ static void usage() {
 }
 
 ////////// extern functions ///////////////////////////////////////////////////
+
+char options_get( int *pargc, char const ***pargv, char const *short_opts,
+                  struct option const long_opts[] ) {
+    int const opt = getopt_long(
+      *pargc, const_cast<char**>( *pargv ), short_opts, long_opts, nullptr
+    );
+    if ( opt == -1 ) {
+      *pargc -= ::optind, *pargv += ::optind;
+      return '\0';
+    }
+    mark_option( opt );
+    return static_cast<char>( opt );
+}
 
 void options_init( int *pargc, char const ***pargv ) {
   me = PJL::base_name( (*pargv)[0] );

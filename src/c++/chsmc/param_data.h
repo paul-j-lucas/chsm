@@ -60,11 +60,11 @@ struct param_data {
    */
   struct param {
     unsigned const    line_no_;         ///< Line number of declaration.
-    std::string const declaration_;     ///< Parameter declaration.
+    std::string const decl_;            ///< Parameter declaration.
     std::string const name_;            ///< Parameter name.
 
-    param( unsigned line_no, char const *declaration, char const *name ) :
-      line_no_( line_no ), declaration_( declaration ), name_( name )
+    param( unsigned line_no, char const *decl, char const *name ) :
+      line_no_( line_no ), decl_( decl ), name_( name )
     {
     }
   };

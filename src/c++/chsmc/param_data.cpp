@@ -23,6 +23,7 @@
 #include "param_data.h"
 
 // standard
+#include <cassert>
 #include <cstring>
 
 using namespace std;
@@ -57,7 +58,7 @@ ostream& param_data::emit_param_list_aux( ostream &o, list_sep &comma,
       //
       // Emit a formal parameter list, i.e., the types and names.
       //
-      o << stuff_decl( param.declaration_,
+      o << stuff_decl( param.decl_,
         ((emit_flags & EMIT_PREFIX) != 0 ? PARAM_PREFIX_ : ""),
         ((emit_flags & EMIT_FORMAL) != 0 ? param.name_ : "")
       );
@@ -71,6 +72,7 @@ char const* param_data::stuff_decl( char const *decl, char const *s1,
   static char decl_buf[ 256 ];                // should be big enough
   ::strcpy( decl_buf, decl );
   char *const x = ::strchr( decl_buf, '$' );  // x marks the spot
+  assert( x != nullptr );
   ::strcpy( x, s1 );
   ::strcat( x, s2 );
   ::strcpy( x + ::strlen( s1 ) + ::strlen( s2 ), decl + (x - decl_buf + 1) );

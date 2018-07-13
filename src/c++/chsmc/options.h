@@ -32,6 +32,7 @@
 /// @cond DOXYGEN_IGNORE
 
 // standard
+#include <getopt.h>
 #include <string>
 
 /// @endcode
@@ -66,6 +67,22 @@ extern "C" int        yydebug;
 #endif /* YYDEBUG */
 
 ////////// extern functions ///////////////////////////////////////////////////
+
+/**
+ * Parse the next command-line option, if any.
+ *
+ * @param pargc A pointer to the argument count.  Upon final return, it is
+ * decremented by the number of options leaving the count of non-option
+ * arguments.
+ * @param ppargv A pointer to the argument vector.  Upon final return, it is
+ * incremented past the options to the first non-option argument.
+ * @param short_opts A pointer to the short options string.
+ * @param long_opts A pointer to the long options array.
+ * @return Returns the next short option given or `\0` if there are no more
+ * options.
+ */
+char options_get( int *pargc, char const ***pargv, char const *short_opts,
+                  struct option const long_opts[] );
 
 /**
  * Initializes command-line option variables.

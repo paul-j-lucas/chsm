@@ -21,6 +21,9 @@
 #ifndef chsm_cxx_test_H
 #define chsm_cxx_test_H
 
+// CHSM
+#include <chsm.h>
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #define BLOCK(...)                do { __VA_ARGS__ } while (0)
