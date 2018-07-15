@@ -1,0 +1,1 @@
+decl="void (C::*$)()" name="f"

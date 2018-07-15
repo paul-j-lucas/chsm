@@ -35,9 +35,10 @@ public:
    * The lexical analyzer's tokenization state.
    */
   enum state_type {
-    TOKENIZE_NORMAL,                    ///< Normal CHSM tokenization.
-    TOKENIZE_CONDITION,                 ///< Tokenize event conditions.
-    TOKENIZE_ARG_LIST                   ///< Tokenize event argument lists.
+    STATE_NORMAL,                       ///< Normal CHSM tokenization.
+    STATE_MAYBE_CCLASS,                 ///< Tokenize a C++ class name.
+    STATE_MAYBE_CEXPR,                  ///< Tokenize a C++ expression.
+    STATE_MAYBE_CPARAMS                 ///< Tokenize a C++ parameter list.
   };
 
   /**
@@ -76,7 +77,7 @@ public:
    * `char*` and other times as `char[]` (depending on the implementation),
    * we'll use this instead.
    */
-  char const *token;
+  char *token;
 
 private:
   lexer();

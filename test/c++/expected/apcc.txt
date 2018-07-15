@@ -1,0 +1,1 @@
+decl="char const *$[]" name="a"

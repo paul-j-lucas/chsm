@@ -1,0 +1,2 @@
+decl="int $" name="x"
+decl="int $" name="y"

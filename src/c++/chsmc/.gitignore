@@ -1,3 +1,4 @@
 /chsmc
+/lang_parser_test
 /lexer.cpp
 /parser.[ch]pp

@@ -33,39 +33,74 @@ CHSMC =		$(top_builddir)/src/c++/chsmc/chsmc
 
 ###############################################################################
 
-TESTS =	tests/dominance1 \
-	tests/dominance2 \
-	tests/dominance3 \
-	tests/enter_deep \
-	tests/enter_exit \
-	tests/enter_once \
-	tests/erroneous1 \
-	tests/erroneous2 \
-	tests/events1 \
-	tests/events2 \
-	tests/events3 \
-	tests/events4 \
-	tests/events5 \
-	tests/finite \
-	tests/history1 \
-	tests/history2 \
-	tests/internal \
-	tests/microstep1 \
-	tests/microstep2 \
-	tests/nondeterminism \
-	tests/precondition \
-	tests/target1 \
-	tests/target2
+ARGLIST_TESTS =	tests/_cpmf_v.arglist \
+		tests/_i.arglist \
+		tests/_ii.arglist \
+		tests/_pfii_v.arglist \
+		tests/_r_map_ii.arglist \
+		tests/ai.arglist \
+		tests/ai012.arglist \
+		tests/ai0xA.arglist \
+		tests/ai9.arglist \
+		tests/apcc.arglist \
+		tests/cpi.arglist \
+		tests/cpmf_v.arglist \
+		tests/i.arglist \
+		tests/ii.arglist \
+		tests/pf_v.arglist \
+		tests/pfcpce_v.arglist \
+		tests/pfii_v.arglist \
+		tests/pfipfi_v_pfi_v.arglist \
+		tests/pi.arglist \
+		tests/pmf_v.arglist \
+		tests/r_map_ii.arglist \
+		tests/ri.arglist \
+		tests/rri.arglist \
+		tests/rtii.arglist \
+		tests/tii.arglist
+
+CHSMC_TESTS =	tests/derived \
+		tests/dominance1 \
+		tests/dominance2 \
+		tests/dominance3 \
+		tests/enter_deep \
+		tests/enter_exit \
+		tests/enter_once \
+		tests/erroneous1 \
+		tests/erroneous2 \
+		tests/events1 \
+		tests/events2 \
+		tests/events3 \
+		tests/events4 \
+		tests/events5 \
+		tests/finite \
+		tests/history1 \
+		tests/history2 \
+		tests/internal \
+		tests/microstep1 \
+		tests/microstep2 \
+		tests/nondeterminism \
+		tests/precondition \
+		tests/target1 \
+		tests/target2
+
+TESTS =		$(ARGLIST_TESTS) \
+		$(CHSMC_TESTS)
 
 ###############################################################################
+
+AM_TESTS_ENVIRONMENT = BUILD_SRC=$(top_builddir)/src; export BUILD_SRC ;
+
+TEST_EXTENSIONS = .arglist
+ARGLIST_LOG_DRIVER = $(top_srcdir)/test/arglist_test.sh
 
 clean-local:
 	rm -fr tests/*.dSYM
 
 clean-tests:
-	rm -f $(TESTS)
+	rm -f $(CHSMC_TESTS)
 
-EXTRA_DIST = tests
+EXTRA_DIST = arglist_test.sh tests
 dist-hook:
 	cd $(distdir)/tests && rm -fr *.log *.trs
 

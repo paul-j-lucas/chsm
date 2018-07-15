@@ -1,0 +1,1 @@
+decl="int $[012]" name="a"

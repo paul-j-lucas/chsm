@@ -226,30 +226,6 @@ static char const* get_long_opt( char short_opt ) {
 }
 
 /**
- * Parses a string for a language.
- *
- * @param s The language string to parse.
- */
-static lang parse_lang( char const *s ) {
-  typedef unordered_map<string,lang> lang_map_type;
-  static lang_map_type const lang_map {
-    { "c++",  lang::CPP   },
-#ifdef ENABLE_JAVA
-    { "java", lang::JAVA  },
-#endif /* ENABLE_JAVA */
-  };
-  assert( s != nullptr );
-  auto const found = lang_map.find( PJL::tolower( s ) );
-  if ( found == lang_map.end() ) {
-    PMESSAGE_EXIT( EX_USAGE,
-      '"' << s << "\": unsupported language for " << format_opt( 'x' ) << '\n'
-    );
-  }
-
-  return found->second;
-}
-
-/**
  * Parses command-line options.
  *
  * @param pargc A pointer to the argument count from `main()`.
@@ -271,7 +247,7 @@ static void parse_options( int *pargc, char const ***pargv ) {
       case 'D': opt_definition_file   = optarg;               break;
 
 #ifdef ENABLE_JAVA
-      case 'j': opt_lang = lang::JAVA;
+      case 'j': opt_lang              = lang::JAVA;
                 opt_declaration_file  = optarg;
                 opt_definition_file   = optarg;               break;
 #endif /* ENABLE_JAVA */
@@ -354,6 +330,25 @@ char options_get( int *pargc, char const ***pargv, char const *short_opts,
 void options_init( int *pargc, char const ***pargv ) {
   me = PJL::base_name( (*pargv)[0] );
   parse_options( pargc, pargv );
+}
+
+lang parse_lang( char const *s ) {
+  typedef unordered_map<string,lang> lang_map_type;
+  static lang_map_type const lang_map {
+    { "c++",  lang::CPP   },
+#ifdef ENABLE_JAVA
+    { "java", lang::JAVA  },
+#endif /* ENABLE_JAVA */
+  };
+  assert( s != nullptr );
+  auto const found = lang_map.find( PJL::tolower( s ) );
+  if ( found == lang_map.end() ) {
+    PMESSAGE_EXIT( EX_USAGE,
+      '"' << s << "\": unsupported language for " << format_opt( 'x' ) << '\n'
+    );
+  }
+
+  return found->second;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

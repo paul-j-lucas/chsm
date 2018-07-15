@@ -1,0 +1,1 @@
+decl="int $" name="x"

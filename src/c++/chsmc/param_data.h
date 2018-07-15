@@ -21,13 +21,15 @@
 #ifndef chsmc_param_data_H
 #define chsmc_param_data_H
 
+// local
+#include "lang_parser.h"
+
 class list_sep;                         /* in list_sep.h */
 
 // standard
 #include <functional>
 #include <iostream>
 #include <string>
-#include <vector>
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -44,32 +46,9 @@ struct param_data {
    */
   static char const PARAM_PREFIX_[];
 
-  /**
-   * An individual parameter.
-   * Given a declaration such as:
-   *
-   *      T (*const foo)( U )
-   *
-   * we store it as:
-   *
-   *      declaration: T (*const $)( U )
-   *      name       : foo
-   *
-   * See the comments for the `arg_cat` and `arg_cat_ident` productions in
-   * `parser.ypp`.
-   */
-  struct param {
-    unsigned const    line_no_;         ///< Line number of declaration.
-    std::string const decl_;            ///< Parameter declaration.
-    std::string const name_;            ///< Parameter name.
+  typedef fn_param param;
+  typedef fn_param_list param_list_type;
 
-    param( unsigned line_no, char const *decl, char const *name ) :
-      line_no_( line_no ), decl_( decl ), name_( name )
-    {
-    }
-  };
-
-  typedef std::vector<param> param_list_type;
   param_list_type param_list_;
 
   /** Bitmask for emit flags. */

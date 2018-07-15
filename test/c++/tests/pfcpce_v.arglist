@@ -1,0 +1,1 @@
+-c | void (*f)(char const *, ...) | 0

@@ -94,6 +94,13 @@ char options_get( int *pargc, char const ***pargv, char const *short_opts,
  */
 void options_init( int *pargc, char const ***pargv );
 
+/**
+ * Parses a string for a language.
+ *
+ * @param s The language string to parse.
+ */
+lang parse_lang( char const *s );
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #endif /* chsmc_options_H */

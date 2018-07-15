@@ -1,0 +1,1 @@
+decl="void (*(*$)(int sig, void (*f)(int)))(int)" name="psignal"

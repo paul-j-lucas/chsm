@@ -77,28 +77,26 @@
 
 /**
  * We must use this macro to return tokens to ensure that the global text
- * pointer gets set.  Ordinarily, one wouldn't have to do this for simple
- * tokens, but the subroutine production arg_cat in parser.ypp needs all the
- * text to glue together.  See the comments in parser.y[[ for more info.
+ * pointer gets set.
  *
  * @hideinitializer
  */
 #define RETURN(TOKEN) \
-  BLOCK( lexer::instance().token = ::yytext; return (TOKEN); )
+  BLOCK( lexer::instance().token = yytext; return (TOKEN); )
 
 /**
  * Echo the current lexer text to the target file.
  *
  * @hideinitializer
  */
-#define T_ECHO                    cc.code_gen_->emit_text( ::yytext )
+#define T_ECHO                    cc.code_gen_->emit_text( yytext )
 
 /**
  * Echo the current lexer text to the temporary user code file.
  *
  * @hideinitializer
  */
-#define U_ECHO                    cc.user_code_->out() << ::yytext
+#define U_ECHO                    cc.user_code_->out() << yytext
 
 /**
  * Override flex's input to read from the CHSM source file.
@@ -148,7 +146,6 @@ struct keyword {
 static keyword const KEYWORDS[] = {     // in alphabetical order
   { L_CHSM,     Y_CHSM      },
   { L_CLUSTER,  Y_CLUSTER   },
-  { L_CONST,    Y_CONST     },
   { L_DEEP,     Y_DEEP      },
   { L_ENTER,    Y_ENTER     },
   { L_EVENT,    Y_EVENT     },
@@ -162,12 +159,11 @@ static keyword const KEYWORDS[] = {     // in alphabetical order
   { L_SET,      Y_SET       },
   { L_STATE,    Y_STATE     },
   { L_UPON,     Y_UPON      },
-  { L_VOLATILE, Y_VOLATILE  },
   { nullptr,    0           }
 };
 
 // local variables
-static unsigned     just_did_ident;     ///< Used during substate processing.
+static unsigned     just_did_ident;     ///< Used during substate lexing.
 static unsigned     parens_depth;       ///< Balances `()`, `[]`
 static scond_stack  sconds;             ///< Start-condition stack.
 
@@ -236,10 +232,24 @@ extern "C" {
 %}
 
 /**
- * Used to process the CHSM description section, i.e., after the first %% and
+ * Used to process the CHSM description section, i.e., after the first `%%` and
  * before the second, if any.
  */
 %s MAIN
+
+/**
+ * Used between `<` and `>` for template declarations.  The text is irrelevant
+ * as far as we're concerned, so it is passed along to the underlying C++
+ * compiler.
+ */
+%s ANGLE
+
+/**
+ * Used between `%{` and `%}` for arbitrary C++ code.  Text is diverted to the
+ * temporary user-code file.  During this state, the `$` token is recognized as
+ * an escape for specifying embedded constructs; see the comment for EMBED.
+ */
+%s CCODE
 
 /**
  * Used between `[` and `]` for event conditions that are arbitrary C++
@@ -247,42 +257,27 @@ extern "C" {
  * state, the `$` token is recognized as an escape for specifying embedded
  * constructs; see the comment for EMBED.
  */
-%s COND
-
-/**
- * Used between `%{` and `%}` for arbitrary C++ code.  Text is diverted to the
- * temporary user-code file.  During this state, the `$` token is recognized as
- * an escape for specifying embedded constructs; see the comment for EMBED.
- */
-%s CODE
-
-/**
- * Used as a sub-state during either COND or CODE for recognizing the embedded
- * constructs:
- *
- *      $enter(s) $exit(s) $in(s) ${s}
- */
-%s EMBED
-
-/**
- * The ANGLE state is used between `<` and `>` for template declarations.  The
- * text is irrelevant as far as we're concerned, so it is passed along to the
- * underlying C++ compiler.
- */
-%s ANGLE
-
-/**
- * The BRACKET state is used between `[` and `]` for vector declarations.  The
- * text is irrelevant as far as we're concerned, so it is passed along to the
- * underlying C++ compiler.
- */
-%s BRACKET
+%s CEXPR
 
 /**
  * Used after the second `%%`, if any.  Once in this state, all text is copied
  * straight through verbatim.  This state is never left.
  */
 %s DONE
+
+/**
+ * Used as a sub-state during either CCODE or CEXPR for recognizing the
+ * embedded constructs:
+ *
+ *      $enter(s) $exit(s) $in(s) ${s}
+ */
+%s EMBED
+
+/**
+ * Used between `(` and `)` for event parameter declarations that are C++
+ * declarations.
+ */
+%s PAREN
 
 /*****************************************************************************/
 
@@ -323,11 +318,11 @@ substates   (\.{identifier})+
 <INITIAL,DONE>.+          { T_ECHO; }
 
 <INITIAL>\n               { ++cc.source_->line_no_; T_ECHO; }
-<MAIN,ANGLE,BRACKET>\n    { ++cc.source_->line_no_; }
-<COND,CODE,EMBED>\n       { ++cc.source_->line_no_; U_ECHO; }
+<MAIN,ANGLE,PAREN>\n      { ++cc.source_->line_no_; }
+<CCODE,CEXPR,EMBED>\n     { ++cc.source_->line_no_; U_ECHO; }
 <MAIN,EMBED>{S}+          { /* nothing */; }
 
-<COND,CODE>\"             {             /* handle string literal */
+<CCODE,CEXPR>\"           {             /* handle string literal */
                             U_ECHO;
                             for ( int c = yyinput(), prev = '\0';
                                   c != EOF; prev = c, c = yyinput() ) {
@@ -355,16 +350,15 @@ substates   (\.{identifier})+
                             } // for
                           }
 
-<COND,CODE>'(.|\')+'      { U_ECHO; }
-<COND,CODE>'              |
-<COND,CODE>''             { lex_error( "bad character literal" ); }
+<CCODE,CEXPR>'(.|\')+'    { U_ECHO; }
+<CCODE,CEXPR>'            |
+<CCODE,CEXPR>''           { lex_error( "bad character literal" ); }
 
-<MAIN,EMBED>{identifier}  {
-                            //
+<MAIN,EMBED>{identifier}  { //
                             // Check to see if it's a keyword; if not, it's
                             // just a Y_IDENTIFIER.
                             //
-                            if ( keyword const *k = keyword_find( ::yytext ) )
+                            if ( keyword const *k = keyword_find( yytext ) )
                               RETURN( k->y_token );
                             just_did_ident = 1;
                             RETURN( Y_IDENTIFIER );
@@ -388,113 +382,104 @@ substates   (\.{identifier})+
                             RETURN( Y_DOTS );
                           }
 
-<MAIN>"["                 { //
-                            // Normally, []'s are just returned as ordinary
-                            // tokens.  However, if we're doing special
-                            // processing, do not return text up to the
-                            // matching ]; instead divert it for full syntax
-                            // checking by the underlying C++ compiler later
-                            // (behind yacc's back).  While doing this, we
-                            // still have to count and balance []'s to know
-                            // when to stop the covert activity.
-                            //
-                            switch ( lexer::instance().state() ) {
-                              case lexer::TOKENIZE_NORMAL:
-                                break;
-                              case lexer::TOKENIZE_ARG_LIST:
-                                BEGIN( BRACKET );
-                                break;
-                              case lexer::TOKENIZE_CONDITION:
-                                BEGIN( COND );
-                                break;
-                            } // switch
-                            parens_depth = 1;
-                            RETURN( ::yytext[0] );
-                          }
-
-<COND>"]"                 {
-                            if ( --parens_depth == 0 ) {
-                              //
-                              // The []'s are now balanced: return to our
-                              // normal state.
-                              //
-                              BEGIN( MAIN );
-                              RETURN( ::yytext[0] );
-                            } else {
-                              U_ECHO;
-                            }
-                          }
-
-<BRACKET>"]"              {
-                            if ( --parens_depth == 0 ) {
-                              //
-                              // The []'s are now balanced: return to our
-                              // normal state.  Note that ::yytext contains all
-                              // the text between [ and ].
-                              //
-                              BEGIN( MAIN );
-                              RETURN( ']' );  // can not do ::yytext[0]
-                            } else {
-                              yymore();
-                            }
-                          }
-
+<MAIN>"("                 |
 <MAIN>"<"                 { //
-                            // Similarly to []'s above, <>'s are normally
-                            // returned as ordinary tokens.  However, if we're
-                            // doing argument list processing, do not return
-                            // text up to the matching >; instead accumulate it
-                            // into ::yytext by using yymore() for full syntax
-                            // checking by the underlying C++ compiler later
-                            // (behind yacc's back).  Again, we still have to
-                            // count and balance <>'s to know when to stop the
+                            // Normally, '(' and '<' are returned as ordinary
+                            // tokens.  However, if we're doing parameter list
+                            // lexing, do not return text up to the matching
+                            // ')' or '>'; instead, accumulate it into yytext
+                            // by using yymore() for full syntax checking by
+                            // the underlying C++ compiler later (behind
+                            // Bison's back).  Again, we still have to count
+                            // and balance () or <> to know when to stop the
                             // covert activity.
                             //
                             switch ( lexer::instance().state() ) {
-                              case lexer::TOKENIZE_ARG_LIST:
+                              case lexer::STATE_MAYBE_CCLASS:
                                 BEGIN( ANGLE );
+                                yymore();
+                                break;
+                              case lexer::STATE_MAYBE_CPARAMS:
+                                BEGIN( PAREN );
+                                yymore();
                                 break;
                               default:
                                 /* suppress warning */;
                             } // switch
                             parens_depth = 1;
-                            RETURN( ::yytext[0] );
+                            RETURN( yytext[0] );
                           }
 
+<MAIN>"["                 { //
+                            // Similarly to '(' above, '[' is normally returned
+                            // as an ordinary token.  However, if we're doing
+                            // special lexing, do not return text up to the
+                            // matching ']'; instead, divert it for full syntax
+                            // checking by the underlying C++ compiler later
+                            // (behind Bison's back).  While doing this, we
+                            // still have to count and balance [] to know when
+                            // to stop the covert activity.
+                            //
+                            switch ( lexer::instance().state() ) {
+                              case lexer::STATE_MAYBE_CPARAMS:
+                                // See the comment for the event_description
+                                // rule in parser.ypp.
+                              case lexer::STATE_MAYBE_CEXPR:
+                                BEGIN( CEXPR );
+                                break;
+                              default:
+                                /* suppress warning */;
+                            } // switch
+                            parens_depth = 1;
+                            RETURN( yytext[0] );
+                          }
+
+<PAREN>")"                |
 <ANGLE>">"                {
                             if ( --parens_depth == 0 ) {
                               //
-                              // The <>'s are now balanced: return to our
-                              // normal state.  Note that ::yytext contains all
-                              // the text between < and >.
+                              // The (), <>, or [] are now balanced: return to
+                              // our normal state.  Note that yytext contains
+                              // all the text between the (), <>, or [].
                               //
                               BEGIN( MAIN );
-                              RETURN( '>' );  // can not do ::yytext[0]
+                              RETURN( yytext[ yyleng - 1 ] );
                             } else {
                               yymore();
                             }
                           }
 
-<COND>"["                 { ++parens_depth; U_ECHO; }
+<CEXPR>"]"                {
+                            if ( --parens_depth == 0 ) {
+                              //
+                              // The []s are now balanced: return to our normal
+                              // state.
+                              //
+                              BEGIN( MAIN );
+                              RETURN( yytext[0] );
+                            } else {
+                              U_ECHO;
+                            }
+                          }
+
+<CEXPR>"["                { ++parens_depth; U_ECHO; }
+
 <ANGLE>"<"                |
-<BRACKET>"["              { ++parens_depth; yymore(); }
+<PAREN>"("                { ++parens_depth; yymore(); }
+
 <ANGLE>[^>\n]+            |
-<BRACKET>[^\]\n]+         { yymore(); }
+<PAREN>[^)\n]+            { yymore(); }
 
-<MAIN>[,;()>{}]           |
-<EMBED>[,({]              { RETURN( ::yytext[0] ); }
-<EMBED>[)}]               { RESUME(); RETURN( ::yytext[0] ); }
+<MAIN>[,;)>{}]            |
+<EMBED>[,({]              { RETURN( yytext[0] ); }
+<EMBED>[)}]               { RESUME(); RETURN( yytext[0] ); }
 <MAIN>"->"                { RETURN( Y_ARROW ); }
-<MAIN>[*&]                { RETURN( ::yytext[0] ); }
-<MAIN>"&&"                { RETURN( Y_2AMPERSAND ); }
-<MAIN>::{S}*\*            { RETURN( Y_2COLON_STAR ); }
-<MAIN,EMBED>"::"          { RETURN( Y_2COLON ); }
 <MAIN,EMBED>"."+          { RETURN( Y_DOTS ); }
-<MAIN>"%{"                { BEGIN( CODE ); return Y_LCODE; }
-<CODE>"%}"                { BEGIN( MAIN ); return Y_RCODE; }
-<COND,CODE>"$"            { CALL( EMBED ); return ::yytext[0]; }
+<MAIN>"%{"                { BEGIN( CCODE ); return Y_LCODE; }
+<CCODE>"%}"               { BEGIN( MAIN ); return Y_RCODE; }
+<CCODE,CEXPR>"$"          { CALL( EMBED ); return yytext[0]; }
 
-<COND,CODE>.              { U_ECHO; }
+<CCODE,CEXPR>.            { U_ECHO; }
 <MAIN,EMBED>.             { return Y_ERROR; }
 
 %%
@@ -505,7 +490,7 @@ substates   (\.{identifier})+
 
 lexer::lexer() :
   token( nullptr ),
-  state_( TOKENIZE_NORMAL ),
+  state_( STATE_NORMAL ),
   stack_p_( -1 )
 {
 }

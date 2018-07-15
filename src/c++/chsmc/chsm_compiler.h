@@ -25,6 +25,7 @@
 #include "base_info.h"
 #include "file.h"
 #include "compiler_util.h"
+#include "lang_parser.h"
 
 class code_generator;
 
@@ -40,36 +41,7 @@ class code_generator;
 struct chsm_compiler {
   typedef base_info::symbol_type symbol_type;
 
-  //
-  // Special-purpose struct used to process event parameters.
-  //
-  struct arg_type {
-    unsigned  line_no_;                 // line# in source file of decl
-    bool      got_variable_;
-    char      ident_[2][128];           // var name is in ident_[ 0 ]
-    char      decl_[256];               // declaration/type of variable
-
-    void init( unsigned line_no ) {
-      line_no_ = line_no;
-      got_variable_ = false;
-      *ident_[0] = *ident_[1] = '\0';
-      decl_len_ = 0;
-    }
-
-    void cat( char const *s ) {
-      ::strcpy( decl_ + decl_len_, s );
-      decl_len_ += ::strlen( s );
-    }
-
-    void cat( char c ) {
-      decl_[ decl_len_ ] = c;
-      decl_[ ++decl_len_ ] = '\0';
-    }
-
-  private:
-    size_t decl_len_;
-  };
-  arg_type                    arg_;
+  fn_param param_;
 
   std::unique_ptr<code_generator> code_gen_;
 

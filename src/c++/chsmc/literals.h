@@ -23,7 +23,7 @@
 
 /**
  * @file
- * Declares constants for CHSM and C++ language literals.
+ * Declares constants for CHSM, C++, and Java language literals.
  */
 
 #ifdef L_SET
@@ -48,10 +48,6 @@ extern char const L_PARAM[];
 extern char const L_SET[];
 extern char const L_STATE[];
 extern char const L_UPON[];
-
-// C++
-extern char const L_CONST[];
-extern char const L_VOLATILE[];
 
 // Java
 extern char const L_PUBLIC[];

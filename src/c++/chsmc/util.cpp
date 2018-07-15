@@ -113,6 +113,16 @@ char const* ltoa( long n ) {
   return s;
 }
 
+char opening_char( char c ) {
+  switch ( c ) {
+    case ')': return '(' ;
+    case '>': return '<' ;
+    case ']': return '[' ;
+    case '}': return '{' ;
+    default : return '\0';
+  } // switch
+}
+
 void path_append( string *path, string const &component ) {
   assert( path != nullptr );
   if ( !path->empty() ) {

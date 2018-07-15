@@ -1,0 +1,1 @@
+decl="std::pair<int, int> $" name="p"

@@ -1,0 +1,175 @@
+/*
+**      CHSM Language System
+**      test/java/tests/derived.chsmj
+**
+**      Copyright (C) 2006-2018  Paul J. Lucas & Fabio Riccardi
+**
+**      This program is free software; you can redistribute it and/or modify
+**      it under the terms of the GNU General Public License as published by
+**      the Free Software Foundation; either version 3 of the License, or
+**      (at your option) any later version.
+**
+**      This program is distributed in the hope that it will be useful,
+**      but WITHOUT ANY WARRANTY; without even the implied warranty of
+**      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**      GNU General Public License for more details.
+**
+**      You should have received a copy of the GNU General Public License
+**      along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file
+ * Tests parsing and running of derived CHSMs and states.
+ *
+ * @note This test is derived from the grid example.
+ */
+
+import java.util.Stack;
+
+///////////////////////////////////////////////////////////////////////////////
+
+/**
+ * A %StackMachine is-a CHSM.Machine that additionally maintains a stack of
+ * states.
+ */
+class StackMachine extends Test {
+
+  public void pushState( CHSM.State s ) {
+    state_stack_.push( s );
+  }
+
+  public CHSM.State popState() {
+    if ( state_stack_.empty() )
+      return null;
+    return state_stack_.pop();
+  }
+
+  private final Stack<CHSM.State> state_stack_ = new Stack<CHSM.State>();
+}
+
+/**
+ * A %PushOnExit is-a CHSM.State that pushes itself onto the stack of a
+ * StackMachine upon exit.
+ */
+class PushOnExit extends CHSM.State {
+  public PushOnExit( CHSM_STATE_ARGS ) {
+    super( CHSM_STATE_INIT );
+  }
+
+  /**
+   * Override exit() to keep track of what states we've moved from so we can
+   * later go back if desired.
+   */
+  public boolean exit( CHSM.Event trigger, CHSM.State to ) {
+    //
+    // Call base-class exit() function as required and proceed only if it
+    // returns true.
+    //
+    if ( !super.exit( trigger, to ) )
+      return false;
+    //
+    // To implement multiple levels of undo, we push the state only if the
+    // event isn't undo.  If undo events were pushed also, then only one level
+    // of undo would be implemented because each undo would undo the previous
+    // undo and the state would flip-flop.
+    //
+    if ( !( trigger instanceof Grid.undoEvent ) )
+      ((StackMachine)machine()).pushState( this );
+    return true;
+  }
+}
+
+%%
+///////////////////////////////////////////////////////////////////////////////
+
+/**
+ * A %Grid is a 3x3 grid of compass locations.  One can move around the grid by
+ * broadcasting the direction to go.  One can also undo one's move and go back.
+ */
+chsm<StackMachine> Grid is {
+
+  cluster loc(nw,n,ne,w,c,e,sw,s,se) {
+    //
+    // By using an outer cluster, we can specify what to do upon an undo event
+    // once.
+    //
+    undo -> [ popState() ];
+  } is {
+    state<PushOnExit> c {
+      north -> n;
+      south -> s;
+      west -> w;
+      east -> e;
+    }
+    state<PushOnExit> nw {
+      east -> n;
+      south -> w;
+    }
+    state<PushOnExit> n {
+      west -> nw;
+      east -> ne;
+      south -> c;
+    }
+    state<PushOnExit> ne {
+      west -> n;
+      south -> e;
+    }
+    state<PushOnExit> w {
+      north -> nw;
+      east -> c;
+      south -> sw;
+    }
+    state<PushOnExit> e {
+      west -> c;
+      north -> ne;
+      south -> se;
+    }
+    state<PushOnExit> sw {
+      north -> w;
+      east -> s;
+    }
+    state<PushOnExit> s {
+      west -> sw;
+      north -> c;
+      east -> se;
+    }
+    state<PushOnExit> se {
+      west -> s;
+      north -> e;
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+%%
+
+public class derived {
+
+	  public static void main( String args[] ) {
+    final Grid g = new Grid();
+    g.enter();
+
+    g.north();
+    g.undo();
+
+    if ( !(
+       g       .active() &&
+      !g.loc.nw.active() &&
+      !g.loc.n .active() &&
+      !g.loc.ne.active() &&
+      !g.loc.w .active() &&
+       g.loc.c .active() &&
+      !g.loc.e .active() &&
+      !g.loc.sw.active() &&
+      !g.loc.s .active() &&
+      !g.loc.se.active()
+    ) )
+      Test.exitCode = 1;
+
+    Test.printResult();
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// vim:set et sw=2 ts=2 syntax=java:

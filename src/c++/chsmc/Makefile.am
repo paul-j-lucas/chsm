@@ -19,6 +19,7 @@
 ##
 
 bin_PROGRAMS =		chsmc
+check_PROGRAMS =	lang_parser_test
 
 AM_CPPFLAGS =		-I$(top_srcdir)/lib \
 			-I$(top_builddir)/lib \
@@ -27,7 +28,18 @@ AM_CPPFLAGS =		-I$(top_srcdir)/lib \
 AM_YFLAGS =		-d
 LDADD =			$(top_builddir)/lib/libgnu.a
 
-chsmc_SOURCES =		base_info.h \
+COMMON_SOURCES =	lang_parser.cpp lang_parser.h \
+			cpp_parser.cpp cpp_parser.h \
+			options.cpp options.h \
+			string_builder.h \
+			util.cpp util.h
+
+if ENABLE_JAVA
+COMMON_SOURCES +=	java_parser.cpp java_parser.h
+endif
+
+chsmc_SOURCES =		$(COMMON_SOURCES) \
+			base_info.h \
 			child_info.h \
 			chsm_info.h \
 			chsm_compiler.cpp chsm_compiler.h \
@@ -46,7 +58,6 @@ chsmc_SOURCES =		base_info.h \
 			literals.cpp literals.h \
 			main.cpp \
 			mangle.cpp mangle.h \
-			options.cpp options.h \
 			param_data.cpp param_data.h \
 			parent_info.h \
 			parser.ypp \
@@ -58,7 +69,6 @@ chsmc_SOURCES =		base_info.h \
 			symbol.cpp symbol.h \
 			transition_info.h \
 			user_event_info.h \
-			util.cpp util.h \
 			xxx_info.cpp
 
 if ENABLE_JAVA
@@ -66,5 +76,9 @@ chsmc_SOURCES +=	java_generator.cpp java_generator.h
 endif
 
 BUILT_SOURCES =		parser.cpp parser.hpp lexer.cpp
+
+lang_parser_test_SOURCES = \
+			$(COMMON_SOURCES) \
+			lang_parser_test.cpp
 
 # vim:set noet sw=8 ts=8:

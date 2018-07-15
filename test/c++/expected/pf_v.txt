@@ -1,0 +1,1 @@
+decl="void (*$)()" name="f"

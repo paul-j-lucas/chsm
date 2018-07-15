@@ -45,6 +45,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <unistd.h>                     /* for unlink(2) */
 
@@ -214,9 +215,6 @@ static void yyerror( char const *msg ) {
 %token  Y_UPON
 
         /* C++ keywords for declarations */
-%token  Y_CONST
-%token  Y_VOLATILE
-
 %token  Y_FINAL
 %token  Y_PUBLIC
 
@@ -228,13 +226,7 @@ static void yyerror( char const *msg ) {
 %token  Y_DOTS                          /* \.+ */
 %token  Y_LCODE                   "%{"
 %token  Y_RCODE                   "%}"
-%right  '&'                             /* C++ reference */
-%right  '*'                             /* C++ pointer */
-%right  Y_2AMPERSAND                    /* C++ rvalue reference */
-%left   Y_2COLON_STAR                   /* C++ pointer-to-member */
 %left   '[' ']'
-%left   Y_LOWER_THAN_2COLON             /* bogus: eliminates a shift/reduce */
-%left   Y_2COLON                  "::"  /* C++ scope resolution */
 %token  '(' ')' '{' '}' '<' '>'
 
         /* other */
@@ -309,7 +301,15 @@ chsm_description
     /*
     ** derived_class(char*) sy_chsm -> ---
     */
-  : public_opt Y_CHSM derived_class_spec_opt identifier
+  : public_opt Y_CHSM
+    {
+      //
+      // We have to put the lexer into this state here before the '<' (if any)
+      // is parsed.  The state is popped in derived_class_spec_opt.
+      //
+      lexer::instance().push_state( lexer::STATE_MAYBE_CCLASS );
+    }
+    derived_class_spec_opt identifier
     {
       POP_SYMBOL( sy_identifier );
       POP_STRING( derived );
@@ -326,9 +326,11 @@ chsm_description
       cc.sy_chsm_ = sy_identifier;
       PUSH_SYMBOL( cc.sy_chsm_ );
       PUSH( static_cast<param_data*>( CHSM ) );
+      lexer::instance().push_state( lexer::STATE_MAYBE_CPARAMS );
     }
     parameter_list_opt
     {
+      lexer::instance().pop_state();
       POP_PTR( param_data, pd );
       if ( pd->param_list_.size() && CHSM->derived_.empty() )
         cc.source_->error() << "parameters allowed only for derived CHSMs\n";
@@ -344,11 +346,6 @@ chsm_description
       SY_ROOT->insert_info( new cluster_info( 0, 0, history ) );
     }
     enter_exit_action_spec_opt body
-
-  | public_opt Y_CHSM error
-    {
-      elaborate_error() << "chsm name expected\n";
-    }
 
   | error
     {
@@ -370,7 +367,7 @@ public_opt
         PUSH( true );
       }
       else {
-        cc.source_->warning() << "\"public\" is Java-only; ignored\n";
+        cc.source_->warning() << QUOTE(L_PUBLIC) << " is Java-only; ignored\n";
         PUSH( false );
       }
     }
@@ -447,7 +444,12 @@ state_description
     /*
     ** derived_class(char*) sy_state -> ---
     */
-  : Y_STATE state_declaration
+  : Y_STATE
+    {
+      // See comment in chsm_description.
+      lexer::instance().push_state( lexer::STATE_MAYBE_CCLASS );
+    }
+    state_declaration
     {
       POP_SYMBOL( sy_state );
       POP_STRING( derived );
@@ -465,7 +467,12 @@ cluster_description
     /*
     ** derived_class(char*) sy_cluster history? -> ---
     */
-  : Y_CLUSTER state_declaration child_declaration history_opt
+  : Y_CLUSTER
+    {
+      // See comment in chsm_description.
+      lexer::instance().push_state( lexer::STATE_MAYBE_CCLASS );
+    }
+    state_declaration child_declaration history_opt
     {
       POP_TYPE( bool, history );
       POP_SYMBOL( sy_cluster );
@@ -526,7 +533,12 @@ set_description
     /*
     ** derived_class(char*) sy_set -> ---
     */
-  : Y_SET state_declaration child_declaration
+  : Y_SET
+    {
+      // See comment in chsm_description.
+      lexer::instance().push_state( lexer::STATE_MAYBE_CCLASS );
+    }
+    state_declaration child_declaration
     {
       POP_SYMBOL( sy_set );
       POP_STRING( derived );
@@ -591,6 +603,7 @@ state_declaration
         //
         new_state.delete_info();
       }
+
       //
       // Add the state to the queue of states to remember the declaration order
       // (if we haven't seen it before).
@@ -686,12 +699,25 @@ event_description
       }
       PUSH( sy_event );
       PUSH( (param_data*)INFO( user_event, sy_event ) );
-      //
-      // Let the lexical analyzer know that we're doing conditions.
-      //
-      lexer::instance().push_state( lexer::TOKENIZE_CONDITION );
+      lexer::instance().push_state( lexer::STATE_MAYBE_CPARAMS );
     }
-    parameter_list_opt event_precondition_opt semi_expected
+    parameter_list_opt
+/*  //
+    // We'd like to switch states in a mid-rule action here but can't because
+    // parameter_list_opt is optional so Bison has to do look-ahead.  When '('
+    // isn't present but '[' is, Bison wouldn't have yet performed this action,
+    // so the lexer would be in the wrong state.
+    //
+    {
+      lexer::instance().pop_state();
+      lexer::instance().push_state( lexer::STATE_MAYBE_CEXPR );
+    }
+    //
+    // To fix this, in the lexer, we instead can treat STATE_MAYBE_CPARAMS the
+    // same as STATE_MAYBE_CEXPR for the '[' token.
+    //
+*/
+    event_precondition_opt semi_expected
     {
       yyerrok;
       lexer::instance().pop_state();
@@ -714,12 +740,7 @@ base_event_spec_opt
     {
       PUSH_SYMBOL( nullptr );
     }
-  | '<' base_event '>'
-  | '<' base_event error '>'
-    {
-      yyerrok;
-      elaborate_error() << "error in base event specification\n";
-    }
+  | '<' base_event rangle_expected
   | '<' error '>'
     {
       yyerrok;
@@ -862,10 +883,7 @@ transition_type
     */
   : "->"
     {
-      //
-      // Let the lexical analyzer know that we're doing conditions.
-      //
-      lexer::instance().push_state( lexer::TOKENIZE_CONDITION );
+      lexer::instance().push_state( lexer::STATE_MAYBE_CEXPR );
     }
     transition_target
     {
@@ -926,10 +944,7 @@ event_condition_spec
     */
   : event_name
     {
-      //
-      // Let the lexical analyzer know that we're doing conditions.
-      //
-      lexer::instance().push_state( lexer::TOKENIZE_CONDITION );
+      lexer::instance().push_state( lexer::STATE_MAYBE_CEXPR );
     }
     event_condition_opt
     {
@@ -1183,314 +1198,25 @@ user_event
 /*****************************************************************************/
 
 parameter_list_opt
-    /*
-    ** This part of the grammar to parse parameter declarations had the C++
-    ** grammar in the ARM for argument declarations, sections 17.3 and 17.4, as
-    ** its base.  There were several modifications and simplifications made to
-    ** allow Bison to be able to parse it unambigously and independent of
-    ** context.
-    **
-    ** One thing we impose is that parameter declarations may not be abstract
-    ** since we need the variable name:
-    **
-    **      event alpha( int );       // illegal
-    **      event alpha( int x );     // better
-    */
   : /* empty */
-  | '(' ')'
-  | '('
-    {
-      lexer::instance().push_state( lexer::TOKENIZE_ARG_LIST );
-    }
-    arg_decl_list ')'
-    {
-      lexer::instance().pop_state();
-    }
-  ;
-
-arg_cat
-    /*
-    ** During parameter declaration list parsing, we have to reconstruct the
-    ** text of the declaration so it can later be emitted into the generated
-    ** code in user-event paramater declarations.  To do this, we insert a
-    ** "subroutine" production, arg_cat, after every terminal to concatenate
-    ** the text in lexer::instance().token to the declaration we're
-    ** reconstructing.
-    */
-  : /* empty */
-    {
-      cc.arg_.cat( lexer::instance().token );
-      cc.arg_.cat( ' ' );
-    }
-  ;
-
-arg_cat_ident
-    /*
-    ** However, we want to extract the identifier of the variable name and
-    ** substitute a '$' marker in its place.  (See the comment in
-    ** user_event_info::definition() for why we need to do this.)  Hence, when
-    ** we're all done, for a declaration such as:
-    **
-    **      T (*const foo)( U )
-    **
-    ** we'll get:
-    **
-    **      declaration: T (*const $)( U )
-    **      variable   : foo
-    **
-    ** To do this, we can't call arc_cat immediately upon getting a
-    ** Y_IDENTIFIER because we can't tell at that level if it's the identifier
-    ** for the variable or not.  Instead, we store the text for a Y_IDENTIFIER
-    ** someplace used only for Y_IDENTs that we can concatenate later further
-    ** along in a production.
-    */
-  : /* empty */
-    {
-      char *const s = cc.arg_.ident_[ cc.arg_.got_variable_ ];
-      if ( *s != '\0' ) {
-        cc.arg_.cat( s );
-        cc.arg_.cat( ' ' );
-        *s = '\0';
-      }
-    }
-  ;
-
-arg_decl_list
-  : arg_decl
-  | arg_decl_list ',' arg_cat arg_decl
-  ;
-
-arg_decl
-    /*
-    ** param_data -> param_data
-    */
-  : {
-      cc.arg_.init( cc.source_->line_no_ );
-    }
-    final_arg_opt decl_specifiers declarator
+  | '(' /* param list */ ')'
     {
       TOP_PTR( param_data, pd );
-      pd->param_list_.push_back(
-        param_data::param( cc.arg_.line_no_, cc.arg_.decl_, cc.arg_.ident_[0] )
-      );
-    }
-  ;
-
-final_arg_opt
-  : /* empty */
-  | Y_FINAL arg_cat
-    {
-      if ( opt_lang != lang::JAVA )
-        cc.source_->error() << "\"final\" is Java-only\n";
-    }
-  ;
-
-decl_specifiers
-  : decl_specifier
-  | decl_specifiers decl_specifier
-  ;
-
-decl_specifier
-  : complete_class_name
-  | const_or_volatile arg_cat
-  ;
-
-const_or_volatile
-  : Y_CONST
-  | Y_VOLATILE
-  ;
-
-complete_class_name
-  : qualified_class_name arg_cat_ident
-
-    /* C++ only */
-  | "::" arg_cat qualified_class_name arg_cat_ident
-  | "::" error
-    {
-      elaborate_error() << "class name expected after " << QUOTE("::") << '\n';
-    }
-  ;
-
-qualified_class_name
-    /*
-    ** Set explicit precedence to eliminate a shift/reduce conflict.  This case
-    ** parallels the classic if/else conflict.
-    **
-    ** See: "lex & yacc" 2nd edition, O'Reilly & Associates, Inc., ISBN
-    ** 1-56592-000-7, Oct. 1992, p. 234.
-    */
-  : class_name %prec Y_LOWER_THAN_2COLON
-
-  | class_name "::" arg_cat_ident       /* C++ only */
-    {
-      //
-      // Must explicitly append "::" rather than call arg_cat since the lexer's
-      // text is the _next_ token due to lookahead.
-      //
-      cc.arg_.cat( "::" );
-    }
-    qualified_class_name
-
-  | class_name "::" error               /* C++ only */
-    {
-      elaborate_error() << "class name expected after " << QUOTE("::") << '\n';
-    }
-
-  | class_name Y_DOTS arg_cat_ident     /* Java only */
-    {
-      //
-      // Must explicitly append "." rather than call arg_cat since the lexer's
-      // text is the _next_ token due to lookahead.
-      //
-      cc.arg_.cat( "." );
-    }
-    qualified_class_name
-
-  | class_name Y_DOTS error             /* Java only */
-    {
-      elaborate_error() << "class name expected after " << QUOTE(".") << '\n';
-    }
-  ;
-
-class_name
-  : decl_identifier template_args_opt
-  ;
-
-decl_identifier
-    /*
-    ** As mentioned above in the comment for arc_cat_ident, store the text of a
-    ** Y_IDENTIFIER seperately.  Once we have the Y_IDENTIFIER for the variable
-    ** in cc.arg_.ident_[0], store all subsequent text for Y_IDENTIFIERSs in
-    ** cc.arg_.ident_[1] so as not to overwrite it.
-    */
-  : Y_IDENTIFIER
-    {
-      ::strcpy( cc.arg_.ident_[ cc.arg_.got_variable_ ], lexer::instance().token );
-    }
-  ;
-
-template_args_opt
-    /*
-    ** Since the identifier for the variable name can not possibly be between <
-    ** and > template parameters, let lex reduce all that down to a single
-    ** token thus simplifying the grammar.
-    */
-  : /* empty */
-  | '<' arg_cat_ident arg_cat /* anything */ '>' arg_cat
-  ;
-
-declarator
-    /*
-    ** C++ nested declarators:
-    **      T (d)                       // silly, but legal
-    **      T (*d)( ... )               // pointer to function
-    **
-    ** Note: we do not allow:
-    **
-    **      T d()                       // function declaration
-    */
-  : '(' arg_cat declarator ')' arg_cat sub_arg_decl_list_opt
-
-    /*
-    ** C++ & Java vector declarations:
-    **      T d[ ... ]
-    **
-    ** Similarly to < and > for template parameters, the identifier for the
-    ** variable name can not possibly be between [ and ] vector dimensions;
-    ** therefore, let lex reduce all that down to a single token thus
-    ** simplifying the grammar.
-    */
-  | declarator '[' arg_cat /* anything */ ']' arg_cat
-
-    /*
-    ** C++ pointers:
-    **      T *d
-    */
-  | '*' arg_cat cv_qualifier_list_opt declarator
-
-    /*
-    ** C++ references:
-    **      T &d
-    */
-  | '&' arg_cat cv_qualifier_list_opt declarator
-
-    /*
-    ** C++ rvalue references:
-    **      T &&d
-    */
-  | "&&" arg_cat cv_qualifier_list_opt declarator
-
-    /*
-    ** C++ pointers-to-member:
-    **      T C::*d
-    **
-    ** Note: We cheat by using a single token for this ::{white}*\* to
-    ** eliminate a shift/reduce conflict.  In C++, :: and * are separate
-    ** tokens.  Allowing whitspace between :: and * should cover all cases (we
-    ** hope).
-    */
-  | complete_class_name arg_cat_ident "::" arg_cat
-      cv_qualifier_list_opt declarator
-
-    /*
-    ** Variable name.
-    */
-  | decl_identifier
-    {
-      if ( !cc.arg_.got_variable_ ) {
-        cc.arg_.got_variable_ = true;
-        cc.arg_.cat( '$' );
+      string const token{ lexer::instance().token };
+      istringstream iss{ token };
+      try {
+        auto parser{ lang_parser::create( opt_lang, iss ) };
+        auto const params{ parser->parse_param_list() };
+        for ( auto const &param : params ) {
+          pd->param_list_.push_back(
+            param_data::param( param.line_no_, param.decl_, param.name_ )
+          );
+        } // for
+      }
+      catch ( lang_parser::exception const &e ) {
+        cc.source_->error() << e.what() << endl;
       }
     }
-
-  | error
-    {
-      elaborate_error() << "variable name expected in parameter declaration\n";
-    }
-  ;
-
-sub_arg_decl_list_opt
-  : /* empty */
-  | '(' arg_cat abstract_arg_decl_list_opt ')' arg_cat cv_qualifier_list_opt
-  ;
-
-abstract_arg_decl_list_opt
-  : /* empty */
-  | abstract_arg_decl_list
-  ;
-
-abstract_arg_decl_list
-  : abstract_arg_decl
-  | abstract_arg_decl_list ',' arg_cat abstract_arg_decl
-  ;
-
-abstract_arg_decl
-  : decl_specifiers abstract_declarator
-  ;
-
-abstract_declarator
-    /*
-    ** abstract_declarator is basically the same as declarator except that it
-    ** allows a variable name to be omitted, hence abstract.
-    */
-  : /* empty */
-  | '(' arg_cat abstract_declarator ')' arg_cat
-  | abstract_declarator '[' arg_cat /* anything */ ']' arg_cat
-  | '*' arg_cat cv_qualifier_list_opt abstract_declarator
-  | '&' arg_cat cv_qualifier_list_opt abstract_declarator
-  | "&&" arg_cat cv_qualifier_list_opt abstract_declarator
-  | complete_class_name "::" arg_cat
-      cv_qualifier_list_opt abstract_declarator
-  ;
-
-cv_qualifier_list_opt
-  : /* empty */
-  | cv_qualifier_list
-  ;
-
-cv_qualifier_list
-  : const_or_volatile arg_cat
-  | cv_qualifier_list const_or_volatile arg_cat
   ;
 
 /*****************************************************************************/
@@ -1513,25 +1239,20 @@ derived_class_spec_opt
     */
   : /* empty */
     {
+      lexer::instance().pop_state();
       PUSH_STRING( nullptr );
     }
 
-  | '<'
-    {
-      cc.arg_.init( cc.source_->line_no_ );
-      lexer::instance().push_state( lexer::TOKENIZE_ARG_LIST );
-    }
-    complete_class_name '>'
+  | '<' /* class name */ '>'
     {
       lexer::instance().pop_state();
-      PUSH_STRING( cc.arg_.decl_ );
-    }
-
-  | '<' error '>'
-    {
-      yyerrok;
-      elaborate_error() << "derived class expected\n";
-      PUSH_STRING( nullptr );
+      char *token = lexer::instance().token;
+      // Get rid of the '<' '>' characters.
+      if ( *token == '<' )
+        ++token;
+      if ( char *const rangle = strrchr( token, '>' ) )
+        *rangle = '\0';
+      PUSH_STRING( token );
     }
   ;
 
@@ -1686,6 +1407,14 @@ semi_expected
   | error
     {
       elaborate_error() << "';' expected\n";
+    }
+  ;
+
+rangle_expected
+  : '>'
+  | error
+    {
+      elaborate_error() << "'>' expected\n";
     }
   ;
 

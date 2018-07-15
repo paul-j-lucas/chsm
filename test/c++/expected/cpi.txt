@@ -1,0 +1,1 @@
+decl="int *const $" name="p"

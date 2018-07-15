@@ -43,10 +43,6 @@ char const L_SET[]      = "set";
 char const L_STATE[]    = "state";
 char const L_UPON[]     = "upon";
 
-// C++
-char const L_CONST[]    = "const";
-char const L_VOLATILE[] = "volatile";
-
 // Java
 char const L_PUBLIC[]   = "public";
 

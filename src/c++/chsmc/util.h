@@ -38,6 +38,7 @@
 #include <functional>
 #include <iostream>
 #include <iterator>
+#include <stack>
 #include <string>
 #include <sysexits.h>
 
@@ -50,6 +51,9 @@ namespace PJL {
 /** Gets the number of elements of the given array. */
 #define ARRAY_SIZE(A)             (sizeof(A) / sizeof(0[A]))
 
+/** Always assert and include a message. */
+#define ASSERT_0_MSG(MSG)         assert( 0 && "" MSG )
+
 /** Embeds the given statements into a compount statement block. */
 #define BLOCK(...)                do { __VA_ARGS__ } while (0)
 
@@ -58,6 +62,26 @@ namespace PJL {
 
 /** Shorthand for calling **strerror**(3). */
 #define STRERROR                  strerror( errno )
+
+/**
+ * Defines std::swap(CLASS&,CLASS&).
+ *
+ * @param CLASS The class to define swap for.
+ * @hideinitializer
+ */
+#define DEFINE_STD_SWAP_FUNCTION(CLASS)       \
+  namespace std {                             \
+    inline void swap( CLASS &a, CLASS &b ) {  \
+      a.swap( b );                            \
+    }                                         \
+    inline void swap( CLASS &&a, CLASS &b ) { \
+      b.swap( a );                            \
+    }                                         \
+    inline void swap( CLASS &a, CLASS &&b ) { \
+      a.swap( b );                            \
+    }                                         \
+  }                                           \
+  typedef int fake_type_to_eat_semicolon
 
 /**
  * Prints an error message and exits in response to an internal error.
@@ -209,6 +233,18 @@ char const* base_name( char const *path );
 std::string base_name( std::string const &path );
 
 /**
+ * Clears the given stack.
+ *
+ * @tparam T The stack's element type.
+ * @param s The stack to clear.
+ */
+template<typename T>
+inline void clear( std::stack<T> *s ) {
+  while ( !s->empty() )
+    s->pop();
+}
+
+/**
  * Checks whether \a s ends with \a suffix.
  *
  * @param s The string to check.
@@ -249,6 +285,15 @@ char const* ltoa( long n );
 inline char const* itoa( int n ) {
   return ltoa( n );
 }
+
+/**
+ * Given a "closing" character, gets it matching "opening" chcaracter.  The
+ * opening characters are: `(<[{`.
+ *
+ * @param c The "closing" character.
+ * @return Returns said "opening" character or the null byte if none.
+ */
+char opening_char( char c );
 
 /**
  * Appends a component to a path ensuring that exactly one `/` separates them.

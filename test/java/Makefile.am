@@ -33,45 +33,58 @@ JAVAC_FLAGS =	-classpath $(CLASSPATH):tests
 
 ###############################################################################
 
-#
-# Command-line option tests
-# =========================
-#
-TESTS =	tests/dominance1.class \
-	tests/dominance2.class \
-	tests/dominance3.class \
-	tests/enter_deep.class \
-	tests/enter_exit.class \
-	tests/enter_once.class \
-	tests/erroneous1.class \
-	tests/erroneous2.class \
-	tests/events1.class \
-	tests/events2.class \
-	tests/events3.class \
-	tests/events4.class \
-	tests/events5.class \
-	tests/finite.class \
-	tests/history1.class \
-	tests/history2.class \
-	tests/internal.class \
-	tests/microstep1.class \
-	tests/microstep2.class \
-	tests/nondeterminism.class \
-	tests/precondition.class \
-	tests/target1.class \
-	tests/target2.class
+ARGLIST_TESTS =	tests/_ai-post.arglist \
+		tests/_ai-pre.arglist \
+		tests/_i.arglist \
+		tests/_ii.arglist \
+		tests/ai-post.arglist \
+		tests/ai-pre.arglist \
+		tests/i.arglist \
+		tests/ii.arglist
+
+CHSMJ_TESTS =	tests/derived.class \
+		tests/dominance1.class \
+		tests/dominance2.class \
+		tests/dominance3.class \
+		tests/enter_deep.class \
+		tests/enter_exit.class \
+		tests/enter_once.class \
+		tests/erroneous1.class \
+		tests/erroneous2.class \
+		tests/events1.class \
+		tests/events2.class \
+		tests/events3.class \
+		tests/events4.class \
+		tests/events5.class \
+		tests/finite.class \
+		tests/history1.class \
+		tests/history2.class \
+		tests/internal.class \
+		tests/microstep1.class \
+		tests/microstep2.class \
+		tests/nondeterminism.class \
+		tests/precondition.class \
+		tests/target1.class \
+		tests/target2.class
+
+TESTS =		$(ARGLIST_TESTS) \
+		$(CHSMJ_TESTS)
 
 ###############################################################################
 
-AM_TESTS_ENVIRONMENT =	CLASSPATH=$(CLASSPATH):.; export CLASSPATH ;
+AM_TESTS_ENVIRONMENT = \
+	BUILD_SRC=$(top_builddir)/src; \
+	CLASSPATH=$(CLASSPATH):.; \
+	export BUILD_SRC CLASSPATH ;
 
-TEST_EXTENSIONS = .class
+TEST_EXTENSIONS = .arglist .class
+ARGLIST_LOG_DRIVER = $(top_srcdir)/test/arglist_test.sh
 CLASS_LOG_DRIVER = $(srcdir)/java_test.sh
 
 clean-local:
 	rm -f tests/*.class
 
-EXTRA_DIST = tests
+EXTRA_DIST = arglist_test.ch tests
 dist-hook:
 	cd $(distdir)/tests && rm -fr *.log *.trs
 
