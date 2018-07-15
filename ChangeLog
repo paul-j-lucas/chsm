@@ -1,0 +1,158 @@
+2018-07-13  Paul J. Lucas <paul@lucasmail.org>
+
+   * c++/chsmc/parser.ypp: Back-ported more misc changes from arglist branch.
+   * c++/chsmc/cpp_generator.cpp, c++/chsmc/java_generator.cpp,
+     c++/chsmc/lexer.lpp, c++/chsmc/options.cpp, c++/chsmc/options.h,
+     c++/chsmc/param_data.cpp, c++/chsmc/param_data.h, c++/chsmc/progenitor.h,
+     c++/tests/chsm_cxx_test.h: Back-ported more misc changes from arglist
+     branch.
+   * examples/c++/grid.chsmc, examples/java/grid.chsmj,
+     c++/chsmc/cpp_generator.cpp, c++/chsmc/java_generator.cpp,
+     c++/chsmc/param_data.cpp, c++/chsmc/param_data.h, c++/chsmc/semantic.cpp:
+     Back-ported misc changes from arglist branch.
+
+2018-06-13  Paul J. Lucas <paul@lucasmail.org>
+
+   * man/man4/chsm-c++.4: Fixed formatting.
+
+2018-06-10  Paul J. Lucas <paul@lucasmail.org>
+
+   * c++/chsmc/lexer.h, c++/chsmc/lexer.lpp, c++/chsmc/parser.ypp: Ported some
+     arglist branch lexer changes.
+
+2018-05-20  Paul J. Lucas <paul@lucasmail.org>
+
+   * lib/Makefile.am, arg-nonnull.h, c++defs.h, getopt-cdefs.in.h,
+     getopt-core.h, getopt-ext.h, getopt-pfx-core.h, getopt-pfx-ext.h,
+     getopt.c, getopt.in.h, getopt1.c, getopt_int.h, gettext.h, stddef.in.h,
+     stdlib.in.h, sys_types.in.h, sysexits.in.h, unistd.in.h, warn-on-use.h,
+     00gnulib.m4, absolute-header.m4, extensions.m4, extern-inline.m4,
+     getopt.m4, gnulib-cache.m4, gnulib-common.m4, gnulib-comp.m4,
+     gnulib-tool.m4, include_next.m4, nocrash.m4, off_t.m4, onceonly.m4,
+     ssize_t.m4, stddef_h.m4, stdlib_h.m4, sys_types_h.m4, sysexits.m4,
+     unistd_h.m4, warn-on-use.m4, wchar_t.m4: Updated GNUlib.
+
+2018-03-26  Paul J. Lucas <paul@lucasmail.org>
+
+   * c++/chsmc/util.h: Made ARRAY_SIZE check for non-arrays.
+   * c++/chsmc/literals.h: Some platforms #define L_SET as a synonym for
+     SEEK_SET.
+   * c++/chsmc/options.cpp: Added ENABLE_JAVA.
+
+2018-03-19  Paul J. Lucas <paul@lucasmail.org>
+
+   * c++/libchsm/machine.cpp: Moved debug line.
+   * c++/chsmc/parser.ypp: Tweaked comment.
+   * c++/chsmc/cpp_generator.cpp: Fixed indentation.
+
+2018-02-12  Paul J. Lucas <paul@lucasmail.org>
+
+   * c++/chsmc/cpp_generator.cpp: Fixed indent of enter/exit actions.
+
+2018-02-05  Paul J. Lucas <paul@lucasmail.org>
+
+   * c++/chsmc/symbol.h: Added synfo::name().
+
+2018-02-01  Paul J. Lucas <paul@lucasmail.org>
+
+   * src/c++/chsmc/Makefile.am, c++/chsmc/code_generator.cpp,
+     c++/chsmc/options.cpp: No longer building Java into chsmc unless Java is
+     enabled.
+
+2018-01-31  Paul J. Lucas <paul@lucasmail.org>
+
+   * c++/chsmc/options.cpp: Now checking for required options.
+   * chsmc.1: Added --java and missing "file" arguments.
+   * c++/chsmc/options.cpp: Added --java; added missing "file" in usage
+     message.
+
+2018-01-21  Paul J. Lucas <paul@lucasmail.org>
+
+   * c++/libchsm/machine.cpp: Added comment.
+   * c++/libchsm/chsm.h, c++/libchsm/event.cpp, c++/libchsm/machine.cpp,
+     c++/libchsm/state.cpp: Now properly calling is_debug() rather than
+     debug().
+
+2018-01-19  Paul J. Lucas <paul@lucasmail.org>
+
+   * test/c++/Makefile.am: Fixed C++ tests build.
+   * c++/libchsm/chsm.h: Removed transition copy/assignment deletion -- caused
+     build errors of generated programs on some compilers.
+   * c++/chsmc/file.cpp, c++/chsmc/util.cpp, c++/chsmc/util.h: Fixed crash with
+     mktemp().
+   * c++/chsmc/symbol.h: Fixed build error on some compilers.
+   * c++/chsmc/lexer.lpp: Added extern "C" for yywrap().
+   * c++/chsmc/util.cpp: Added missing #include <memory>.
+
+2018-01-18  Paul J. Lucas <paul@lucasmail.org>
+
+   * AUTHORS, BUGS, COPYING, Commercial, INSTALL, Makefile.am, NEWS,
+     configure.ac, examples/c++/Makefile.am, examples/c++/grid.chsmc,
+     examples/c++/h2o.chsmc, examples/c++/hello.chsmc,
+     examples/c++/infinite.chsmc, examples/c++/microwave.chsmc,
+     examples/c++/vending.chsmc, examples/java/Makefile.am,
+     examples/java/grid.chsmj, examples/java/h2o.chsmj,
+     examples/java/hello.chsmj, examples/java/infinite.chsmj,
+     examples/java/microwave.chsmj, examples/java/vending.chsmj,
+     lib/Makefile.am, _Noreturn.h, arg-nonnull.h, c++defs.h, getopt-cdefs.in.h,
+     getopt-core.h, getopt-ext.h, getopt-pfx-core.h, getopt-pfx-ext.h,
+     getopt.c, getopt.in.h, getopt1.c, getopt_int.h, gettext.h, stddef.in.h,
+     stdlib.in.h, sys_types.in.h, sysexits.in.h, unistd.c, unistd.in.h,
+     warn-on-use.h, 00gnulib.m4, absolute-header.m4, ax_append_flag.m4,
+     ax_cflags_gcc_option.m4, ax_cflags_warn_all.m4, ax_check_compile_flag.m4,
+     ax_cxx_compile_stdcxx.m4, ax_prog_ant.m4, ax_prog_java.m4,
+     ax_prog_java_works.m4, ax_prog_javac.m4, ax_prog_javac_works.m4,
+     extensions.m4, extern-inline.m4, getopt.m4, gnulib-cache.m4,
+     gnulib-common.m4, gnulib-comp.m4, gnulib-tool.m4, include_next.m4,
+     nocrash.m4, off_t.m4, onceonly.m4, ssize_t.m4, stddef_h.m4, stdlib_h.m4,
+     sys_types_h.m4, sysexits.m4, unistd_h.m4, warn-on-use.m4, wchar_t.m4,
+     man/Makefile.am, man/man1/Makefile.am, chsmc.1, man/man4/Makefile.am,
+     man/man4/chsm-c++.4, man/man4/chsm-java.4, src/c++/Makefile.am,
+     src/c++/chsmc/Makefile.am, c++/chsmc/base_info.h, c++/chsmc/child_info.h,
+     c++/chsmc/chsm_compiler.cpp, c++/chsmc/chsm_compiler.h,
+     c++/chsmc/chsm_info.h, c++/chsmc/clone_ptr.h, c++/chsmc/cluster_info.h,
+     c++/chsmc/code_generator.cpp, c++/chsmc/code_generator.h,
+     c++/chsmc/compiler_util.cpp, c++/chsmc/compiler_util.h,
+     c++/chsmc/cpp_generator.cpp, c++/chsmc/cpp_generator.h,
+     c++/chsmc/event_info.h, c++/chsmc/file.cpp, c++/chsmc/file.h,
+     c++/chsmc/global_info.h, c++/chsmc/indent.cpp, c++/chsmc/indent.h,
+     c++/chsmc/info_visitor.h, c++/chsmc/java_generator.cpp,
+     c++/chsmc/java_generator.h, c++/chsmc/lexer.h, c++/chsmc/lexer.lpp,
+     c++/chsmc/list_sep.h, c++/chsmc/literals.cpp, c++/chsmc/literals.h,
+     c++/chsmc/main.cpp, c++/chsmc/mangle.cpp, c++/chsmc/mangle.h,
+     c++/chsmc/options.cpp, c++/chsmc/options.h, c++/chsmc/param_data.cpp,
+     c++/chsmc/param_data.h, c++/chsmc/parent_info.h, c++/chsmc/parser.ypp,
+     c++/chsmc/progenitor.h, c++/chsmc/semantic.cpp, c++/chsmc/semantic.h,
+     c++/chsmc/serial_number.h, c++/chsmc/set_info.h, c++/chsmc/state_info.h,
+     c++/chsmc/symbol.cpp, c++/chsmc/symbol.h, c++/chsmc/transition_info.h,
+     c++/chsmc/user_event_info.h, c++/chsmc/util.cpp, c++/chsmc/util.h,
+     c++/chsmc/xxx_info.cpp, c++/libchsm/chsm.h, c++/libchsm/cluster.cpp,
+     c++/libchsm/event.cpp, c++/libchsm/machine.cpp, c++/libchsm/parent.cpp,
+     c++/libchsm/set.cpp, c++/libchsm/state.cpp, c++/libchsm/transition.cpp,
+     c++/libchsm/util.h, src/groovy/Makefile.am,
+     src/groovy/libchsm/CHSM/Makefile.am,
+     src/groovy/libchsm/CHSM/groovy/Makefile.am, src/java/Makefile.am,
+     src/java/libchsm/CHSM/Makefile.am, java/libchsm/CHSM/package.html,
+     src/java/libchsm/Makefile.am, test/Makefile.am, test/c++/Makefile.am,
+     c++/tests/chsm_cxx_test.h, c++/tests/dominance1.chsmc,
+     c++/tests/dominance2.chsmc, c++/tests/dominance3.chsmc,
+     c++/tests/enter_deep.chsmc, c++/tests/enter_exit.chsmc,
+     c++/tests/enter_once.chsmc, c++/tests/erroneous1.chsmc,
+     c++/tests/erroneous2.chsmc, c++/tests/events1.chsmc,
+     c++/tests/events2.chsmc, c++/tests/events3.chsmc, c++/tests/events4.chsmc,
+     c++/tests/events5.chsmc, c++/tests/finite.chsmc, c++/tests/history1.chsmc,
+     c++/tests/history2.chsmc, c++/tests/internal.chsmc,
+     c++/tests/microstep1.chsmc, c++/tests/microstep2.chsmc,
+     c++/tests/nondeterminism.chsmc, c++/tests/precondition.chsmc,
+     c++/tests/target1.chsmc, c++/tests/target2.chsmc, test/groovy/Makefile.am,
+     build.xml.in, tests/events5.groovy, test/java/Makefile.am, java_test.sh,
+     tests/dominance1.chsmj, tests/dominance2.chsmj, tests/dominance3.chsmj,
+     tests/enter_exit.chsmj, tests/enter_once.chsmj, tests/erroneous1.chsmj,
+     tests/erroneous2.chsmj, tests/events1.chsmj, tests/events2.chsmj,
+     tests/events3.chsmj, tests/events4.chsmj, tests/events5.chsmj,
+     tests/history2.chsmj, tests/microstep1.chsmj, tests/microstep2.chsmj,
+     tests/precondition.chsmj: Now using autoconf & automake. Now using C++11.
+     Unified C++ and Java CHSM compilers. Removed target code generation from
+     grammar. Removed driver scripts. Now deducing target langauge from
+     filename extension. Added GNU-style long command-line option support.
+     Added --language/-x option. Now catching exceptions in C++ run-time.
