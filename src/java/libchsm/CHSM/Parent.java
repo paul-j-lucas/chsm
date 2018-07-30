@@ -105,9 +105,9 @@ public abstract class Parent extends State implements Iterable<State> {
      *
      * @param notUsed Not used here.
      * @return The default always returns {@code true}.
-     * @see Cluster#switchChild(State)
+     * @see Cluster#switchActiveChildTo(State)
      */
-    protected boolean switchChild( State notUsed ) {
+    protected boolean switchActiveChildTo( State notUsed ) {
         return true;
     }
 

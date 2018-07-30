@@ -199,10 +199,10 @@ public class State {
             } else {
                 //
                 // Otherwise, we have to ask our parent for permission to be
-                // entered.  (See the comment in Cluster.switchChild() for
-                // further details.)
+                // entered.  (See the comment in Cluster.switchActiveChildTo()
+                // for further details.)
                 //
-                if ( !parent_.switchChild( this ) )
+                if ( !parent_.switchActiveChildTo( this ) )
                     return false;
             }
 
@@ -213,7 +213,7 @@ public class State {
 
         //
         // For this state, broadcast entered(this), but only if there are any
-        // transitions on it.  The value for the enter_event_ pointer is
+        // transitions on it.  The value for the enterEvent_ pointer is
         // determined by the CHSM-to-Java compiler.
         //
         if ( enterEvent_ != null )
@@ -221,8 +221,8 @@ public class State {
 
         //
         // Perform the enter action resulting from an "upon enter" statement,
-        // if any.  The value for the enter_action_ pointer is determined by
-        // the CHSM-to-Java compiler.
+        // if any.  The value for the enterAction_ pointer is determined by the
+        // CHSM-to-Java compiler.
         //
         if ( enterAction_ != null )
             enterAction_.exec( this, trigger );

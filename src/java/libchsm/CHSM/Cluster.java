@@ -164,7 +164,7 @@ public class Cluster extends Parent {
      * state to.
      * @return Returns {@code true} only if the active child was switched.
      */
-    protected final boolean switchChild( State child ) {
+    protected final boolean switchActiveChildTo( State child ) {
         if ( activeChild_.active() ) {
             //
             // We're being asked by a currently-inactive child state to become
