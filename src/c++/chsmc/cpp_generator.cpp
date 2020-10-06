@@ -968,9 +968,10 @@ void cpp_definer::visit( user_event_info const &si ) {
     }
     T_OUT << " )";
 
-    for ( auto const &param : si.param_list_ )
+    for ( auto const &param : si.param_list_ ) {
       T_OUT << ", " << param.name_ << "( "
             << param_data::PARAM_PREFIX_ << param.name_ << " )";
+    } // for
 
     T_OUT T_ENDL
           << '{' T_ENDL
