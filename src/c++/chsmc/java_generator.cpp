@@ -910,6 +910,11 @@ void java_definer::visit( user_event_info const &si ) {
   else {
     T_OUT << " );" T_ENDL;
   }
+
+  for ( auto const &param : si.param_list_ ) {
+    T_OUT << indent(4) << param.name_ << " = "
+          << param_data::PARAM_PREFIX_ << param.name_ << ';' T_ENDL;
+  } // for
 }
 
 ///////////////////////////////////////////////////////////////////////////////
