@@ -29,7 +29,7 @@
   <!--===== Build ==========================================================-->
 
   <presetdef name="chsm.javac">
-    <javac debug="true" includeantruntime="false" source="1.5"/>
+    <javac debug="true" includeantruntime="false"/>
   </presetdef>
 
   <target name="javac">
