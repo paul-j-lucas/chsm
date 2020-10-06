@@ -79,7 +79,6 @@ public:
   virtual ~synfo();
 
   synfo& operator=( synfo const& ) = delete;
-  synfo& operator=( synfo&& ) = default;
 
   /**
    * Gets the symbol to which this %synfo belongs.
