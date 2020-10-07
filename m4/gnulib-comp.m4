@@ -1,5 +1,5 @@
 # DO NOT EDIT! GENERATED AUTOMATICALLY!
-# Copyright (C) 2002-2018 Free Software Foundation, Inc.
+# Copyright (C) 2002-2020 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -91,6 +91,7 @@ AC_DEFUN([gl_INIT],
     GNULIB_GL_UNISTD_H_GETOPT=1
   fi
   AC_SUBST([GNULIB_GL_UNISTD_H_GETOPT])
+  gl_UNISTD_MODULE_INDICATOR([getopt-posix])
   AC_SUBST([LIBINTL])
   AC_SUBST([LTLIBINTL])
   gt_TYPE_SSIZE_T
@@ -269,7 +270,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/include_next.m4
   m4/nocrash.m4
   m4/off_t.m4
-  m4/onceonly.m4
+  m4/pid_t.m4
   m4/ssize_t.m4
   m4/stddef_h.m4
   m4/stdlib_h.m4
@@ -278,4 +279,5 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/unistd_h.m4
   m4/warn-on-use.m4
   m4/wchar_t.m4
+  m4/zzgnulib.m4
 ])
