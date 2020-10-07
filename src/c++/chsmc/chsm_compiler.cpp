@@ -44,7 +44,7 @@ chsm_compiler   cc;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-chsm_compiler::chsm_compiler() : dev_null( nullptr ) {
+chsm_compiler::chsm_compiler() : dev_null{ nullptr } {
   error_newlined = false;
 }
 
@@ -130,7 +130,7 @@ void chsm_compiler::check_transitions() {
     while ( *from && *to && *from == *to )
       ++from, ++to;
 
-    if ( *from && *to && from > from0 && from[-1] == '.' ) {
+    if ( *from != '\0' && *to != '\0' && from > from0 && from[-1] == '.' ) {
       //
       // The names differ and neither is a subset of the other.  Take the
       // common part of both names -- this is the name of the least-common-

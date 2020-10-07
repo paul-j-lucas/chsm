@@ -62,7 +62,7 @@ struct progenitor {
  */
 #define PROCREATE(DERIVED_CLASS)                              \
   DERIVED_CLASS* clone( bool deep = false ) const override {  \
-    return new DERIVED_CLASS( *this, deep );                  \
+    return new DERIVED_CLASS{ *this, deep };                  \
   }                                                           \
   typedef int progenitor_dummy_type_to_eat_semicolon
 

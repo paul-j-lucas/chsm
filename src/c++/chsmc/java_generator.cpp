@@ -113,7 +113,7 @@ class java_definer;
  * A %java_initializer is-a java_generator that generates the initialization
  * portion (the calls to constructors of data members) of Java code.
  */
-class java_initializer : public java_generator {
+class java_initializer final : public java_generator {
 private:
   /**
    * Constructs a %java_initializer.
@@ -125,16 +125,16 @@ private:
   void emit_common( event_info const &si );
   void emit_common( state_info const &si );
 
-  void emit() override;
-  void visit( chsm_info const& ) override;
-  void visit( child_info const& ) override;
-  void visit( cluster_info const& ) override;
-  void visit( event_info const& ) override;
-  void visit( global_info const& ) override;
-  void visit( set_info const& ) override;
-  void visit( state_info const& ) override;
-  void visit( transition_info const& ) override;
-  void visit( user_event_info const& ) override;
+  void emit() final;
+  void visit( chsm_info const& ) final;
+  void visit( child_info const& ) final;
+  void visit( cluster_info const& ) final;
+  void visit( event_info const& ) final;
+  void visit( global_info const& ) final;
+  void visit( set_info const& ) final;
+  void visit( state_info const& ) final;
+  void visit( transition_info const& ) final;
+  void visit( user_event_info const& ) final;
 
   friend class java_definer;
 };
@@ -143,7 +143,7 @@ private:
  * A %java_definer is-a java_generator that generates the definitions portion
  * of Java code.
  */
-class java_definer : public java_generator {
+class java_definer final : public java_generator {
 private:
   java_initializer initializer_;
 
@@ -158,16 +158,16 @@ private:
   void emit_states();
   void emit_transitions();
 
-  void emit() override;
-  void visit( chsm_info const& ) override;
-  void visit( child_info const& ) override;
-  void visit( cluster_info const& ) override;
-  void visit( event_info const& ) override;
-  void visit( global_info const& ) override;
-  void visit( set_info const& ) override;
-  void visit( state_info const& ) override;
-  void visit( transition_info const& ) override;
-  void visit( user_event_info const& ) override;
+  void emit() final;
+  void visit( chsm_info const& ) final;
+  void visit( child_info const& ) final;
+  void visit( cluster_info const& ) final;
+  void visit( event_info const& ) final;
+  void visit( global_info const& ) final;
+  void visit( set_info const& ) final;
+  void visit( state_info const& ) final;
+  void visit( transition_info const& ) final;
+  void visit( user_event_info const& ) final;
 
   friend class java_declarer;
 };
@@ -176,7 +176,7 @@ private:
  * A %java_declarer is-a java_generator that generates the declarations portion
  * of Java code.
  */
-class java_declarer : public java_generator {
+class java_declarer final : public java_generator {
 public:
   java_declarer();
 
@@ -187,16 +187,16 @@ public:
   void emit_common( parent_info const &si,
                     char const *formal_params = nullptr );
 
-  void emit() override;
-  void visit( chsm_info const& ) override;
-  void visit( child_info const& ) override;
-  void visit( cluster_info const& ) override;
-  void visit( event_info const& ) override;
-  void visit( global_info const& ) override;
-  void visit( set_info const& ) override;
-  void visit( state_info const& ) override;
-  void visit( transition_info const& ) override;
-  void visit( user_event_info const& ) override;
+  void emit() final;
+  void visit( chsm_info const& ) final;
+  void visit( child_info const& ) final;
+  void visit( cluster_info const& ) final;
+  void visit( event_info const& ) final;
+  void visit( global_info const& ) final;
+  void visit( set_info const& ) final;
+  void visit( state_info const& ) final;
+  void visit( transition_info const& ) final;
+  void visit( user_event_info const& ) final;
 
 private:
   std::unique_ptr<java_definer> java_definer_;
@@ -292,7 +292,7 @@ static string substitute( char const *line ) {
     { "CHSM_STATE_INIT",    CHSM_STATE_INIT   },
   };
 
-  string s( line );
+  string s{ line };
   for ( auto const &i : macro_map ) {
     for ( string::size_type pos; (pos = s.find( i.first )) != string::npos; )
       s.replace( pos, i.first.length(), i.second );

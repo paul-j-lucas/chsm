@@ -34,7 +34,7 @@
 struct global_info : base_info {
   CHSM_DECLARE_RTTI;
 
-  global_info() : base_info( SCOPE_GLOBAL ) { }
+  global_info() : base_info{ SCOPE_GLOBAL } { }
 };
 
 ///////////////////////////////////////////////////////////////////////////////

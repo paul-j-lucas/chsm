@@ -45,7 +45,7 @@ int main( int argc, char const *argv[] ) {
   options_init( &argc, &argv );
 
   if ( opt_lang == lang::NONE ) {       // map filename extension to language
-    string const ext = PJL::path_ext( argv[0] );
+    string const ext{ PJL::path_ext( argv[0] ) };
     opt_lang = code_generator::map_ext_to_lang( ext );
     if ( opt_lang == lang::NONE ) {
       PMESSAGE_EXIT( EX_DATAERR,

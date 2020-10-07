@@ -46,7 +46,7 @@ template<class DerivedClass>
 class serial_number : public serial_number_base {
 public:
   serial_number( serial_number<DerivedClass> const& ) :
-    serial_no_( next_no_++ )
+    serial_no_{ next_no_++ }
   {
   }
 
@@ -55,7 +55,7 @@ public:
   }
 
 protected:
-  serial_number() : serial_no_( next_no_++ ) { }
+  serial_number() : serial_no_{ next_no_++ } { }
 
 private:
   static value_type next_no_;

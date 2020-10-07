@@ -29,7 +29,7 @@
 /**
  * A %cluster_info is-a parent_info for a cluster.
  */
-struct cluster_info : parent_info {
+struct cluster_info final : parent_info {
   CHSM_DECLARE_RTTI;
 
   bool const history_;

@@ -44,9 +44,9 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////////
 
 base_info::base_info( scope_type scope ) :
-  synfo( scope ),
-  first_ref_( cc.source_ != nullptr ? cc.source_->line_no_ : 0 ),
-  used_( false )
+  synfo{ scope },
+  first_ref_{ cc.source_ != nullptr ? cc.source_->line_no_ : 0 },
+  used_{ false }
 {
 }
 
@@ -75,9 +75,9 @@ child_info::child_info( symbol const *sy_parent ) :
   // "push" them into the next scope, hence the + 1 in the mem-initialzer
   // below.
   //
-  base_info( symbol_table::scope() + 1 ),
-  sy_parent_( sy_parent ),
-  defined_( false )
+  base_info{ symbol_table::scope() + 1 },
+  sy_parent_{ sy_parent },
+  defined_{ false }
 {
 }
 
@@ -92,9 +92,9 @@ char const chsm_info::PREFIX_TARGET[]     = "T";
 CHSM_DEFINE_RTTI( chsm_info, TYPE(CHSM) );
 
 chsm_info::chsm_info( symbol *sy_root, char const *derived, bool java_public ) :
-  sy_root_( sy_root ),
-  derived_( derived != nullptr ? derived : "" ),
-  java_public_( java_public )
+  sy_root_{ sy_root },
+  derived_{ derived != nullptr ? derived : "" },
+  java_public_{ java_public }
 {
 }
 
@@ -104,8 +104,8 @@ CHSM_DEFINE_RTTI( cluster_info, TYPE(CLUSTER) );
 
 cluster_info::cluster_info( symbol const *sy_parent, char const *derived,
                             bool history ) :
-  parent_info( sy_parent, derived ),
-  history_( history )
+  parent_info{ sy_parent, derived },
+  history_{ history }
 {
 }
 
@@ -114,8 +114,8 @@ cluster_info::cluster_info( symbol const *sy_parent, char const *derived,
 CHSM_DEFINE_RTTI( event_info, TYPE(ENEX_EVENT) );
 
 event_info::event_info( kind k, PJL::symbol const *sy_state ) :
-  kind_( k ),
-  sy_state_( sy_state )
+  kind_{ k },
+  sy_state_{ sy_state }
 {
 }
 
@@ -126,7 +126,7 @@ CHSM_DEFINE_RTTI( global_info, TYPE(GLOBAL) );
 ///////////////////////////////////////////////////////////////////////////////
 
 parent_info::parent_info( PJL::symbol const *sy_parent, char const *derived ) :
-  state_info( sy_parent, derived )
+  state_info{ sy_parent, derived }
 {
 }
 
@@ -135,7 +135,7 @@ parent_info::parent_info( PJL::symbol const *sy_parent, char const *derived ) :
 CHSM_DEFINE_RTTI( set_info, TYPE(SET) );
 
 set_info::set_info( PJL::symbol const *sy_parent, char const *derived ) :
-  parent_info( sy_parent, derived )
+  parent_info{ sy_parent, derived }
 {
 }
 
@@ -144,8 +144,8 @@ set_info::set_info( PJL::symbol const *sy_parent, char const *derived ) :
 CHSM_DEFINE_RTTI( state_info, TYPE(STATE) );
 
 state_info::state_info( symbol const *sy_parent, char const *derived ) :
-  sy_parent_( sy_parent ),
-  derived_( derived != nullptr ? derived : "" )
+  sy_parent_{ sy_parent },
+  derived_{ derived != nullptr ? derived : "" }
 {
 }
 
@@ -156,11 +156,11 @@ CHSM_DEFINE_RTTI( transition_info, TYPE(TRANSITION) );
 transition_info::transition_info( condition_id cid, symbol const *sy_from,
                                   symbol const *sy_to, target_id tid,
                                   action_id aid ) :
-  sy_from_( sy_from ),
-  sy_to_( sy_to ),
-  condition_id_( cid ),
-  target_id_( tid ),
-  action_id_( aid )
+  sy_from_{ sy_from },
+  sy_to_{ sy_to },
+  condition_id_{ cid },
+  target_id_{ tid },
+  action_id_{ aid }
 {
 }
 
@@ -169,8 +169,8 @@ transition_info::transition_info( condition_id cid, symbol const *sy_from,
 CHSM_DEFINE_RTTI( user_event_info, TYPE(USER_EVENT) );
 
 user_event_info::user_event_info( symbol const *sy_base_event ) :
-  sy_base_event_( sy_base_event ),
-  precondition_( PRECONDITION_NONE )
+  sy_base_event_{ sy_base_event },
+  precondition_{ PRECONDITION_NONE }
 {
 }
 

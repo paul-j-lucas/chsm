@@ -29,9 +29,9 @@
 /**
  * A %java_parser is used to parse Java code.
  */
-class java_parser : public lang_parser {
+class java_parser final : public lang_parser {
 public:
-  java_parser( std::istream &is ) : lang_parser( is ) {
+  explicit java_parser( std::istream &is ) : lang_parser{ is } {
   }
 
 private:

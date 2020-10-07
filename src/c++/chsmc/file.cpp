@@ -36,8 +36,8 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////////
 
 file_base::file_base( char const *path, ios::openmode mode ) :
-  path_( path != nullptr ? path : "" ),
-  fio_( nullptr )
+  path_{ path != nullptr ? path : "" },
+  fio_{ nullptr }
 {
   if ( path_.empty() )
     return;
@@ -90,7 +90,7 @@ void source_file::init() {
 ///////////////////////////////////////////////////////////////////////////////
 
 user_code::user_code() :
-  file_base( temp_path( "chsm.XXXXXX" ), std::ios::out )
+  file_base{ temp_path( "chsm.XXXXXX" ), std::ios::out }
 {
   out() << inc_indent;
 }

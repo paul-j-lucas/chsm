@@ -35,7 +35,7 @@
  * Being derived from base_info and not global_info, they are destroyed when
  * the scope closes.
  */
-struct child_info : base_info {
+struct child_info final : base_info {
   CHSM_DECLARE_RTTI;
 
   PJL::symbol const *const sy_parent_;  ///< Symbol of parent state.

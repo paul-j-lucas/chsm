@@ -37,7 +37,7 @@ class list_sep;                         /* in list_sep.h */
  * A %user_event_info is-an event_info and-a param_data that emits itself
  * differently.
  */
-struct user_event_info : event_info, param_data {
+struct user_event_info final : event_info, param_data {
   CHSM_DECLARE_RTTI;
 
   /**

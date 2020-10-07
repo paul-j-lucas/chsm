@@ -49,7 +49,7 @@ namespace {
  * A %cpp_declarer is-a cpp_generator that generates the declarations portion
  * (the `.h` file) of C++ code.
  */
-class cpp_declarer : public cpp_generator {
+class cpp_declarer final : public cpp_generator {
 private:
   void emit_actions( PJL::symbol const *sy_state );
   void emit_common( state_info const &si );
@@ -58,23 +58,23 @@ private:
   void emit_common( parent_info const &si,
                     char const *formal_params = nullptr );
 
-  void emit() override;
-  void visit( chsm_info const& ) override;
-  void visit( child_info const& ) override;
-  void visit( cluster_info const& ) override;
-  void visit( event_info const& ) override;
-  void visit( global_info const& ) override;
-  void visit( set_info const& ) override;
-  void visit( state_info const& ) override;
-  void visit( transition_info const& ) override;
-  void visit( user_event_info const& ) override;
+  void emit() final;
+  void visit( chsm_info const& ) final;
+  void visit( child_info const& ) final;
+  void visit( cluster_info const& ) final;
+  void visit( event_info const& ) final;
+  void visit( global_info const& ) final;
+  void visit( set_info const& ) final;
+  void visit( state_info const& ) final;
+  void visit( transition_info const& ) final;
+  void visit( user_event_info const& ) final;
 };
 
 /**
  * A %cpp_initializer is-a cpp_generator that generates the initialization
  * portion (the calls to constructors of data members) of C++ code.
  */
-class cpp_initializer : public cpp_generator {
+class cpp_initializer final : public cpp_generator {
 public:
   /**
    * Constructs a %cpp_initializer.
@@ -87,23 +87,23 @@ private:
   void emit_common( event_info const &si );
   void emit_common( state_info const &si );
 
-  void emit() override;
-  void visit( chsm_info const& ) override;
-  void visit( child_info const& ) override;
-  void visit( cluster_info const& ) override;
-  void visit( event_info const& ) override;
-  void visit( global_info const& ) override;
-  void visit( set_info const& ) override;
-  void visit( state_info const& ) override;
-  void visit( transition_info const& ) override;
-  void visit( user_event_info const& ) override;
+  void emit() final;
+  void visit( chsm_info const& ) final;
+  void visit( child_info const& ) final;
+  void visit( cluster_info const& ) final;
+  void visit( event_info const& ) final;
+  void visit( global_info const& ) final;
+  void visit( set_info const& ) final;
+  void visit( state_info const& ) final;
+  void visit( transition_info const& ) final;
+  void visit( user_event_info const& ) final;
 };
 
 /**
  * A %cpp_definer is-a cpp_generator that generates the definitions portion
  * (the `.cpp` file) of C++ code.
  */
-class cpp_definer : public cpp_generator {
+class cpp_definer final : public cpp_generator {
 public:
   /**
    * Constructs a %cpp_definer.
@@ -125,16 +125,16 @@ private:
   void emit_states();
   void emit_transitions();
 
-  void emit() override;
-  void visit( chsm_info const& ) override;
-  void visit( child_info const& ) override;
-  void visit( cluster_info const& ) override;
-  void visit( event_info const& ) override;
-  void visit( global_info const& ) override;
-  void visit( set_info const& ) override;
-  void visit( state_info const& ) override;
-  void visit( transition_info const& ) override;
-  void visit( user_event_info const& ) override;
+  void emit() final;
+  void visit( chsm_info const& ) final;
+  void visit( child_info const& ) final;
+  void visit( cluster_info const& ) final;
+  void visit( event_info const& ) final;
+  void visit( global_info const& ) final;
+  void visit( set_info const& ) final;
+  void visit( state_info const& ) final;
+  void visit( transition_info const& ) final;
+  void visit( user_event_info const& ) final;
 };
 
 } // namespace
@@ -211,7 +211,7 @@ static ostream_manip class_name( user_event_info const &si ) {
 ///////////////////////////////////////////////////////////////////////////////
 
 unique_ptr<code_generator> cpp_generator::create() {
-  return unique_ptr<code_generator>( new cpp_declarer );
+  return unique_ptr<code_generator>{ new cpp_declarer };
 }
 
 void cpp_generator::emit_action_block_begin() const {
@@ -370,7 +370,7 @@ void cpp_declarer::emit() {
   // only if we're not emitting to stdout.
   //
   if ( !opt_codegen_only ) {
-    string const declaration_name( cc.target_->path() );
+    string const declaration_name{ cc.target_->path() };
     cc.target_.reset( new target_file( opt_definition_file ) );
     T_OUT << inc_indent;
     T_OUT << "///// <<" << PACKAGE_STRING << ">>" T_ENDL

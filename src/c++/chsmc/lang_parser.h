@@ -52,12 +52,12 @@ struct fn_param {
   std::string decl_;
   std::string name_;
 
-  fn_param() : line_no_( 0 ) {
+  fn_param() : line_no_{ 0 } {
   }
 
   fn_param( unsigned line_no, std::string const &decl,
             std::string const &name ) :
-    line_no_( line_no ), decl_( decl ), name_( name )
+    line_no_{ line_no }, decl_{ decl }, name_{ name }
   {
   }
 
@@ -225,9 +225,9 @@ public:
     /**
      * An %exception is thrown for a parsing error.
      */
-    class exception : public std::exception {
+    class exception final : public std::exception {
     public:
-      explicit exception( std::string const &msg ) : msg_( msg ) { }
+      explicit exception( std::string const &msg ) : msg_{ msg } { }
       virtual ~exception();
 
       virtual const char* what() const noexcept override;
@@ -273,7 +273,7 @@ protected:
      *
      * @param is The input stream to use to get characters.
      */
-    lang_parser( std::istream &is );
+    explicit lang_parser( std::istream &is );
 
     ////////// parsing ////////////////////////////////////////////////////////
 

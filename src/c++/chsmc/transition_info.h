@@ -34,7 +34,7 @@
  * stored there just for convenience so we don't have to create yet another
  * class.
  */
-struct transition_info : global_info {
+struct transition_info final : global_info {
   CHSM_DECLARE_RTTI;
 
   typedef unsigned condition_id;

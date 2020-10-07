@@ -64,6 +64,7 @@ extern bool           opt_stack_debug;
 extern char const    *me;               ///< Program name.
 #ifdef YYDEBUG
 extern "C" int        yydebug;
+#define opt_bison_debug yydebug         ///< Bison debugging.
 #endif /* YYDEBUG */
 
 ////////// extern functions ///////////////////////////////////////////////////

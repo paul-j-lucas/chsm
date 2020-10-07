@@ -47,16 +47,16 @@ public:
   typedef value_type* pointer;
   typedef value_type& reference;
 
-  clone_ptr( pointer p = pointer() ) : p_( p ) {
+  clone_ptr( pointer p = pointer{} ) : p_{ p } {
   }
 
   clone_ptr( clone_ptr const &r ) :
-    p_( r.p_ != nullptr ? r.p_->clone() : nullptr )
+    p_{ r.p_ != nullptr ? r.p_->clone() : nullptr }
   {
   }
 
   clone_ptr( clone_ptr &&r ) :
-    p_( r.p_ )
+    p_{ r.p_ }
   {
     r.p_ = nullptr;
   }

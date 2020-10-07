@@ -31,7 +31,7 @@
  */
 class cpp_parser : public lang_parser {
 public:
-    cpp_parser( std::istream &is ) : lang_parser( is ) {
+    explicit cpp_parser( std::istream &is ) : lang_parser{ is } {
     }
 
 private:

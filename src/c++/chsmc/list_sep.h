@@ -42,8 +42,8 @@ public:
    * @param sep The separator to use.
    */
   explicit list_sep( std::string const &sep = ", " ) :
-    print_( false ),
-    sep_( sep )
+    print_{ false },
+    sep_{ sep }
   {
   }
 

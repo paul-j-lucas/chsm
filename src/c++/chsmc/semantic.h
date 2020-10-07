@@ -33,12 +33,12 @@
 
 class semantic {
 public:
-  semantic( int x ) {
+  explicit semantic( int x ) {
     i_ = x;
     set_tag( int_t );
   }
 
-  semantic( void *x = nullptr ) {
+  explicit semantic( void *x = nullptr ) {
     p_ = x;
     set_tag( ptr_t );
   }

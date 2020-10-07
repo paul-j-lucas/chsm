@@ -170,7 +170,7 @@ private:
   /**
    * Default constructs an %ostream_indent.
    */
-  ostream_indent() : oi_amount( 0 ), oi_scale( 1 ), oi_char( '\t' ) { }
+  ostream_indent() : oi_amount{ 0 }, oi_scale{ 1 }, oi_char{ '\t' } { }
 
   /**
    * Callback function for register_callback() to do memory management.

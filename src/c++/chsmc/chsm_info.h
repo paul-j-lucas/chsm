@@ -42,7 +42,7 @@
  * The class also holds a lot of miscellanous stuff relating to the CHSM as a
  * whole.
  */
-struct chsm_info : global_info, param_data {
+struct chsm_info final : global_info, param_data {
   CHSM_DECLARE_RTTI;
 
   typedef unsigned id_type;
@@ -71,7 +71,7 @@ struct chsm_info : global_info, param_data {
     id_type target_;
     id_type action_;
 
-    id() : condition_( 0 ), target_( 0 ), action_( 0 ) { }
+    id() : condition_{ 0 }, target_{ 0 }, action_{ 0 } { }
   };
 
   id id_;

@@ -57,13 +57,13 @@ public:
 protected:
   std::string const path_;
 
-  file_base() : fio_( nullptr ) {
+  file_base() : fio_{ nullptr } {
   }
 
-  file_base( std::istream &i ) : in_( &i ) {
+  file_base( std::istream &i ) : in_{ &i } {
   }
 
-  file_base( std::ostream &o ) : out_( &o ) {
+  file_base( std::ostream &o ) : out_{ &o } {
   }
 
   ~file_base() {
@@ -86,7 +86,7 @@ protected:
    * @param mode The open mode.
    */
   file_base( std::string const &path, std::ios::openmode mode ) :
-    file_base( path.c_str(), mode )
+    file_base{ path.c_str(), mode }
   {
   }
 
@@ -102,7 +102,7 @@ protected:
 /**
  * Source file info.
  */
-struct source_file : file_base {
+struct source_file final : file_base {
   unsigned  line_no_;
   unsigned  errors_, warnings_;
   bool      check_only_;    // true if no errors
@@ -116,7 +116,7 @@ struct source_file : file_base {
   std::ostream& fatal  ( unsigned alt_no = 0 );
   std::ostream& sorry  ( unsigned alt_no = 0 );
 
-  source_file( std::istream &i ) : file_base( i ) {
+  explicit source_file( std::istream &i ) : file_base{ i } {
     init();
   }
 
@@ -173,28 +173,20 @@ inline std::ostream& source_file::warning( unsigned alt_no ) {
 /**
  * Target file info.
  */
-struct target_file : file_base {
-  unsigned line_no_;
+struct target_file final : file_base {
+  unsigned line_no_ = 1;
 
-  target_file( std::ostream &o ) : file_base( o ) {
-    init();
+  explicit target_file( std::ostream &o ) : file_base{ o } {
   }
 
-  target_file( char const *path = nullptr ) :
-    file_base( path, std::ios::out )
+  explicit target_file( char const *path = nullptr ) :
+    file_base{ path, std::ios::out }
   {
-    init();
   }
 
-  target_file( std::string const &path ) :
-    file_base( path, std::ios::out )
+  explicit target_file( std::string const &path ) :
+    file_base{ path, std::ios::out }
   {
-    init();
-  }
-
-protected:
-  void init() {
-    line_no_ = 1;
   }
 };
 

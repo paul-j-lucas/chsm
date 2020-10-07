@@ -58,8 +58,8 @@ public:
    * @param s The scope level.  Defaults to the current scope.
    */
   explicit synfo( scope_type s = current_scope_ ) :
-    symbol_( nullptr ),
-    scope_( s )
+    symbol_{ nullptr },
+    scope_{ s }
   {
   }
 
@@ -169,7 +169,7 @@ public:
    * @param name The %symbol name.
    * @param si An initial synfo, if any.
    */
-  symbol( std::string const &name, synfo *si = nullptr ) : name_( name ) {
+  symbol( std::string const &name, synfo *si = nullptr ) : name_{ name } {
     init( si );
   }
 
@@ -179,7 +179,7 @@ public:
    * @param name The %symbol name.
    * @param si An initial synfo, if any.
    */
-  symbol( char const *name, synfo *si = nullptr ) : name_( name ) {
+  symbol( char const *name, synfo *si = nullptr ) : name_{ name } {
     init( si );
   }
 
@@ -303,7 +303,7 @@ private:
  * A %symbol_table maintains a collection of symbols during a compilation.  A
  * %symbol_table has a current scope.
  */
-class symbol_table : public std::unordered_map<std::string,symbol> {
+class symbol_table final : public std::unordered_map<std::string,symbol> {
   typedef std::unordered_map<std::string,symbol> base_type;
 public:
   typedef symbol::scope_type scope_type;
