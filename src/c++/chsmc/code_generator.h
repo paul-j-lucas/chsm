@@ -30,8 +30,10 @@ class symbol;
 }
 
 // standard
+#include <filesystem>
 #include <iostream>
 #include <memory>
+#include <utility>
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -43,11 +45,11 @@ public:
   /**
    * Maps a filename extension to a language to generate.
    *
-   * @param ext The filename extension to map.
+   * @param ext The filename extension (starting with `.`) to map.
    * @return Returns said language or `NONE` if \a ext doesn't map to a
    * language.
    */
-  static lang map_ext_to_lang( std::string const &ext );
+  static lang map_ext_to_lang( std::filesystem::path const &ext );
 
   /**
    * Creates a %code_generator for the given language.
@@ -151,13 +153,10 @@ public:
   /**
    * Gets the generated code filename extension(s).
    *
-   * @param declaration_ext A pointer to receive the declaration filename
-   * extension.
-   * @param definition_ext A pointer to receive the definition filename
-   * extension.
+   * @return Returns a pair of the declaration and definition extensions.
    */
-  virtual void get_filename_exts( std::string *declaration_ext,
-                                  std::string *definition_ext ) const = 0;
+  virtual std::pair<std::filesystem::path,std::filesystem::path>
+          get_filename_exts() const = 0;
 
   static std::ostream& section_comment( std::ostream &o );
 

@@ -40,6 +40,7 @@
 /// @endcond
 
 using namespace std;
+namespace fs = std::filesystem;
 
 namespace PJL {
 
@@ -123,15 +124,6 @@ char opening_char( char c ) {
   } // switch
 }
 
-void path_append( string *path, string const &component ) {
-  assert( path != nullptr );
-  if ( !path->empty() ) {
-    if ( (*path)[ path->size() - 1 ] != '/' )
-      *path += '/';
-    *path += component;
-  }
-}
-
 string path_ext( string const &path ) {
   string const temp{ base_name( path ) };
   string::size_type const dot_pos = temp.find_last_of( '.' );
@@ -157,20 +149,16 @@ void perror_exit( int status ) {
   ::exit( status );
 }
 
-char const* temp_dir() {
-  static char const *const dir = getenv( "TMPDIR" );
-  return dir != nullptr ? dir : "/tmp";
-}
-
-string temp_path( char const *pattern ) {
-  string pattern_str{ pattern };
+fs::path temp_path( char const *pattern ) {
+  string const pattern_str{ pattern };
   assert( ends_with( pattern_str, "XXXXXX" ) );
 
-  string path_str{ temp_dir() };
-  path_append( &path_str, pattern_str );
-  unique_ptr<char[]> const mktemp_buf{ new char[ path_str.size() + 1 ] };
-  ::strcpy( mktemp_buf.get(), path_str.c_str() );
-  return string{ ::mktemp( mktemp_buf.get() ) };
+  fs::path path{ fs::temp_directory_path() };
+  path /= pattern_str;
+
+  unique_ptr<char[]> const mktemp_buf{ new char[ path.native().size() + 1 ] };
+  ::strcpy( mktemp_buf.get(), path.c_str() );
+  return fs::path{ ::mktemp( mktemp_buf.get() ) };
 }
 
 ///////////////////////////////////////////////////////////////////////////////

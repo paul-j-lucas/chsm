@@ -32,16 +32,17 @@
 
 using namespace PJL;
 using namespace std;
+namespace fs = std::filesystem;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-file_base::file_base( char const *path, ios::openmode mode ) :
-  path_{ path != nullptr ? path : "" },
+file_base::file_base( fs::path const &path, ios::openmode mode ) :
+  path_{ path },
   fio_{ nullptr }
 {
   if ( path_.empty() )
     return;
-  fio_ = new fstream( path_.c_str(), mode );
+  fio_ = new fstream( path_, mode );
   if ( fio_ == nullptr || fio_->fail() ) {
     cc_error()
       << "could not open \"" << path_ << "\" for "
@@ -50,8 +51,8 @@ file_base::file_base( char const *path, ios::openmode mode ) :
   }
 }
 
-source_file::source_file( char const *path ) :
-  file_base( path, ios::in )
+source_file::source_file( fs::path const &path ) :
+  file_base{ path, ios::in }
 {
   init();
 }
@@ -96,7 +97,8 @@ user_code::user_code() :
 }
 
 user_code::~user_code() {
-  if ( ::unlink( path_.c_str() ) == -1 )
+  std::error_code ec;
+  if ( !fs::remove( path_, ec ) )
     cc_error() << path_ << ": could not remove: " << STRERROR;
 }
 

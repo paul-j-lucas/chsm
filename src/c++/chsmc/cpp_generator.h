@@ -55,8 +55,9 @@ private:
   void emit_text( char const *text ) const final;
   void emit_transition_target_begin() const final;
   void emit_transition_target_end() const final;
-  void get_filename_exts( std::string *declaration_ext,
-                          std::string *definition_ext ) const final;
+
+  std::pair<std::filesystem::path,std::filesystem::path>
+  get_filename_exts() const final;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

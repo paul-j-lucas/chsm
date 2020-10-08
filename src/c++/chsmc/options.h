@@ -32,6 +32,7 @@
 /// @cond DOXYGEN_IGNORE
 
 // standard
+#include <filesystem>
 #include <getopt.h>
 #include <string>
 
@@ -51,19 +52,19 @@ enum class lang {
 ///////////////////////////////////////////////////////////////////////////////
 
 // extern option variables
-extern bool           opt_codegen_only;
-extern std::string    opt_declaration_file;
-extern std::string    opt_definition_file;
-extern lang           opt_lang;
-extern bool           opt_line_directives;
+extern bool                   opt_codegen_only;
+extern std::filesystem::path  opt_declaration_path;
+extern std::filesystem::path  opt_definition_path;
+extern lang                   opt_lang;
+extern bool                   opt_line_directives;
 #ifdef ENABLE_STACK_DEBUG
-extern bool           opt_stack_debug;
+extern bool                   opt_stack_debug;
 #endif /* ENABLE_STACK_DEBUG */
 
 // other extern variables
-extern char const    *me;               ///< Program name.
+extern char const            *me;       ///< Program name.
 #ifdef YYDEBUG
-extern "C" int        yydebug;
+extern "C" int                yydebug;
 #define opt_bison_debug yydebug         ///< Bison debugging.
 #endif /* YYDEBUG */
 

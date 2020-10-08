@@ -27,6 +27,7 @@
 // standard
 #include <cstdlib>
 #include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <sys/types.h>
@@ -38,7 +39,7 @@
  */
 class file_base {
 public:
-  std::string const& path() const {
+  std::filesystem::path const& path() const {
     return path_;
   }
 
@@ -55,7 +56,7 @@ public:
   }
 
 protected:
-  std::string const path_;
+  std::filesystem::path const path_;
 
   file_base() : fio_{ nullptr } {
   }
@@ -77,18 +78,7 @@ protected:
    * @param path The path to the file.
    * @param mode The open mode.
    */
-  file_base( char const *path, std::ios::openmode mode );
-
-  /**
-   * Constructs a %file_base.
-   *
-   * @param path The path to the file.
-   * @param mode The open mode.
-   */
-  file_base( std::string const &path, std::ios::openmode mode ) :
-    file_base{ path.c_str(), mode }
-  {
-  }
+  file_base( std::filesystem::path const &path, std::ios::openmode mode );
 
   union {
     std::istream *in_;
@@ -120,7 +110,7 @@ struct source_file final : file_base {
     init();
   }
 
-  source_file( char const *path = nullptr );
+  explicit source_file( std::filesystem::path const &path );
 
   /**
    * Destroys a %source_file:
@@ -179,12 +169,7 @@ struct target_file final : file_base {
   explicit target_file( std::ostream &o ) : file_base{ o } {
   }
 
-  explicit target_file( char const *path = nullptr ) :
-    file_base{ path, std::ios::out }
-  {
-  }
-
-  explicit target_file( std::string const &path ) :
+  explicit target_file( std::filesystem::path const &path ) :
     file_base{ path, std::ios::out }
   {
   }

@@ -35,6 +35,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstring>
+#include <filesystem>
 #include <functional>
 #include <iostream>
 #include <iterator>
@@ -43,8 +44,6 @@
 #include <sysexits.h>
 
 /// @endcond
-
-namespace PJL {
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -99,6 +98,29 @@ namespace PJL {
  */
 #define PMESSAGE_EXIT(STATUS,...) \
   BLOCK( std::cerr << me <<  ": " << __VA_ARGS__; exit( STATUS ); )
+
+///////////////////////////////////////////////////////////////////////////////
+
+inline std::filesystem::path operator+( std::filesystem::path const &p1,
+                                        std::filesystem::path const &p2 ) {
+  std::filesystem::path rv{ p1 };
+  rv += p2;
+  return rv;
+}
+
+inline std::filesystem::path operator+( std::filesystem::path const &p,
+                                        std::string const &s ) {
+  std::filesystem::path rv{ p };
+  rv += s;
+  return rv;
+}
+
+inline std::filesystem::path operator+( std::filesystem::path const &p,
+                                        char c ) {
+  std::filesystem::path rv{ p };
+  rv += c;
+  return rv;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -182,6 +204,8 @@ namespace PJL {
 #define TYPE_DEFAULT              /* nothing */
 
 ////////// extern functions ///////////////////////////////////////////////////
+
+namespace PJL {
 
 typedef std::function<std::ostream&(std::ostream&)> ostream_manip;
 
@@ -296,14 +320,6 @@ inline char const* itoa( int n ) {
 char opening_char( char c );
 
 /**
- * Appends a component to a path ensuring that exactly one `/` separates them.
- *
- * @param path The path to append to.
- * @param component The component to append.
- */
-void path_append( std::string *path, std::string const &component );
-
-/**
  * Extracts the file-name extension.
  *
  * @param path The path to extract from.
@@ -328,21 +344,13 @@ std::string path_noext( std::string const &path );
 void perror_exit( int status );
 
 /**
- * Gets the full path to the temporary files directory to use.
- *
- * @return Returns the value of the `TMPDIR` environment variable (if set) or
- * `/tmp` (if not).
- */
-char const* temp_dir();
-
-/**
  * Gets the full path to a unique temporary file.
  *
  * @param pattern A file name that \e must end with \e exactly six `X`s, e.g.,
  * `temp.XXXXXX`.
  * @return Returns said full path.
  */
-std::string temp_path( char const *pattern );
+std::filesystem::path temp_path( char const *pattern );
 
 /**
  * Converts a string to lower case.
@@ -374,9 +382,9 @@ inline std::string tolower( std::string const &s ) {
   return result;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
 } // namespace
+
+///////////////////////////////////////////////////////////////////////////////
 
 #endif /* chsmc_util_H */
 /* vim:set et sw=2 ts=2: */

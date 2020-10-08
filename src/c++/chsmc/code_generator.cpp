@@ -30,9 +30,10 @@
 
 // standard
 #include <cassert>
-#include <unordered_map>
+#include <map>
 
 using namespace std;
+namespace fs = std::filesystem;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -52,7 +53,7 @@ unique_ptr<code_generator> code_generator::create( lang l ) {
 void code_generator::emit_source_line_no( ostream &o, unsigned alt_no ) const {
   if ( opt_line_directives )
     o << "//#line " << (alt_no != 0 ? alt_no : cc.source_->line_no_)
-      << " \"" << cc.source_->path() << "\"\n";
+      << ' ' << cc.source_->path() << '\n';
 }
 
 void code_generator::emit_the_end() const {
@@ -60,12 +61,12 @@ void code_generator::emit_the_end() const {
         << section_comment << "THE END" T_ENDL;
 }
 
-lang code_generator::map_ext_to_lang( string const &ext ) {
-  typedef std::unordered_map<string,lang> ext_map_type;
-  static ext_map_type const ext_map {
-    { "chsmc", lang::CPP  },
+lang code_generator::map_ext_to_lang( fs::path const &ext ) {
+  typedef std::map<fs::path,lang> ext_map_type;
+  static ext_map_type const ext_map{
+    { ".chsmc", lang::CPP  },
 #ifdef ENABLE_JAVA
-    { "chsmj", lang::JAVA },
+    { ".chsmj", lang::JAVA },
 #endif /* ENABLE_JAVA */
   };
   auto const found = ext_map.find( ext );

@@ -40,6 +40,7 @@
 
 using namespace std;
 using namespace PJL;
+namespace fs = std::filesystem;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -314,7 +315,7 @@ void cpp_generator::emit_precondition_func_end( symbol const *sy_event ) const {
 void cpp_generator::emit_source_line_no( ostream &o, unsigned alt_no ) const {
   if ( opt_line_directives )
     o << "#line " << (alt_no != 0 ? alt_no : cc.source_->line_no_)
-      << " \"" << cc.source_->path() << "\"\n";
+      << ' ' << cc.source_->path() << '\n';
 }
 
 void cpp_generator::emit_text( char const *text ) const {
@@ -335,12 +336,9 @@ void cpp_generator::emit_transition_target_end() const {
   U_OUT << "; }\n";
 }
 
-void cpp_generator::get_filename_exts( string *declaration_ext,
-                                       string *definition_ext ) const {
-  assert( declaration_ext != nullptr );
-  assert( definition_ext != nullptr );
-  *declaration_ext = "h";
-  *definition_ext = "cpp";
+std::pair<std::filesystem::path,std::filesystem::path>
+cpp_generator::get_filename_exts() const {
+  return std::pair{ "h", "cpp" };
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -371,7 +369,7 @@ void cpp_declarer::emit() {
   //
   if ( !opt_codegen_only ) {
     string const declaration_name{ cc.target_->path() };
-    cc.target_.reset( new target_file( opt_definition_file ) );
+    cc.target_.reset( new target_file( opt_definition_path ) );
     T_OUT << inc_indent;
     T_OUT << "///// <<" << PACKAGE_STRING << ">>" T_ENDL
           T_ENDL

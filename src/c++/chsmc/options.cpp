@@ -42,13 +42,14 @@
 /// @endcond
 
 using namespace std;
+namespace fs = std::filesystem;
 
 ///////////////////////////////////////////////////////////////////////////////
 
 // extern option variables
 bool        opt_codegen_only;
-string      opt_declaration_file;
-string      opt_definition_file;
+fs::path    opt_declaration_path;
+fs::path    opt_definition_path;
 lang        opt_lang;
 bool        opt_line_directives = true;
 #ifdef ENABLE_STACK_DEBUG
@@ -241,15 +242,15 @@ static void parse_options( int *pargc, char const ***pargv ) {
       break;
     switch ( opt ) {
       case 'h': opt_lang              = lang::CPP;      // no break;
-      case 'd': opt_declaration_file  = optarg;               break;
+      case 'd': opt_declaration_path  = optarg;               break;
 
       case 'c': opt_lang              = lang::CPP;      // no break;
-      case 'D': opt_definition_file   = optarg;               break;
+      case 'D': opt_definition_path   = optarg;               break;
 
 #ifdef ENABLE_JAVA
       case 'j': opt_lang              = lang::JAVA;
-                opt_declaration_file  = optarg;
-                opt_definition_file   = optarg;               break;
+                opt_declaration_path  = optarg;
+                opt_definition_path   = optarg;               break;
 #endif /* ENABLE_JAVA */
 
       case 'E': opt_codegen_only      = true;                 break;

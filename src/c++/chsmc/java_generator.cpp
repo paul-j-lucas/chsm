@@ -97,6 +97,7 @@
 
 using namespace std;
 using namespace PJL;
+namespace fs = std::filesystem;
 
 static char const CHSM_PACKAGE_NAME[]   = "CHSM";
 static char const EVENT_CLASS_SUFFIX[]  = "Event";
@@ -449,11 +450,9 @@ void java_generator::emit_transition_target_end() const {
         << indent << "}\n";
 }
 
-void java_generator::get_filename_exts( string *declaration_ext,
-                                        string *definition_ext ) const {
-  assert( declaration_ext != nullptr );
-  assert( definition_ext != nullptr );
-  *declaration_ext = *definition_ext = "java";
+std::pair<std::filesystem::path,std::filesystem::path>
+java_generator::get_filename_exts() const {
+  return std::pair{ "java", "java" };
 }
 
 ///////////////////////////////////////////////////////////////////////////////

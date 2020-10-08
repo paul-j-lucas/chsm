@@ -27,7 +27,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 # Checks for programs.
 AC_PROG_CXX
 gl_EARLY
-AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
+AX_CXX_COMPILE_STDCXX([17], [noext], [mandatory])
 AM_PROG_AR
 AC_PROG_INSTALL
 AC_PROG_LEX
