@@ -45,12 +45,12 @@ inline ostream& event::dout() const {
 ///////////////////////////////////////////////////////////////////////////////
 
 event::event( CHSM_EVENT_ARGS ) :
-  machine_( *chsm_machine_ ),
-  in_progress_( 0 ),
-  param_block_( nullptr ),
-  name_( chsm_name_ ),
-  base_event_( chsm_base_event_ ),
-  transitions_( chsm_transition_list_ )
+  machine_{ *chsm_machine_ },
+  in_progress_{ 0 },
+  param_block_{ nullptr },
+  name_{ chsm_name_ },
+  base_event_{ chsm_base_event_ },
+  transitions_{ chsm_transition_list_ }
 {
   // do nothing else
 }
@@ -66,7 +66,7 @@ void event::broadcast( void *pb ) {
   //
   // Mark ourselves and our base event(s), if any, as being in progress.
   //
-  for ( auto e = this; e; e = e->base_event_ )
+  for ( auto e = this; e != nullptr; e = e->base_event_ )
     ++e->in_progress_;
 
   if ( is_debug_events() )
@@ -132,7 +132,7 @@ void event::broadcasted() {
     //
     // Unmark ourselves and our base events, if any, as being in progress.
     //
-    for ( auto e = this; e; e = e->base_event_ )
+    for ( auto e = this; e != nullptr; e = e->base_event_ )
       if ( e->in_progress_ > 0 )
         --e->in_progress_;
 

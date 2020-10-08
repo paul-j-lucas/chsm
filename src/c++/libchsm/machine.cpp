@@ -38,15 +38,15 @@ event const         machine::PRIME_EVENT_
 ///////////////////////////////////////////////////////////////////////////////
 
 machine::machine( CHSM_MACHINE_ARGS ) :
-  state_( chsm_state_ ),
-  root_( chsm_root_ ),
-  transition_( chsm_transition_ ),
-  transitions_in_machine_( chsm_transitions_in_machine_ ),
-  taken_( chsm_taken_ ),
-  target_( chsm_target_ ),
-  in_progress_( false ),
-  debug_indent_( 0 ),
-  debug_state_( DEBUG_NONE )
+  state_{ chsm_state_ },
+  root_{ chsm_root_ },
+  transition_{ chsm_transition_ },
+  transitions_in_machine_{ chsm_transitions_in_machine_ },
+  taken_{ chsm_taken_ },
+  target_{ chsm_target_ },
+  in_progress_{ false },
+  debug_indent_{ 0 },
+  debug_state_{ DEBUG_NONE }
 {
   for ( unsigned i = 0; i < transitions_in_machine_; ++i ) {
     taken_[i] = nullptr;

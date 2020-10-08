@@ -28,8 +28,8 @@ namespace CHSM_NS {
 ///////////////////////////////////////////////////////////////////////////////
 
 cluster::cluster( CHSM_CLUSTER_ARGS ) :
-  parent( CHSM_PARENT_INIT ),
-  history_( chsm_history_ )
+  parent{ CHSM_PARENT_INIT },
+  history_{ chsm_history_ }
 {
   active_child_ = last_child_ = nullptr;
 }
