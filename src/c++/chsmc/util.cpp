@@ -81,11 +81,11 @@ string identify( string const &s ) {
 }
 
 char const* ltoa( long n ) {
-  int const BUF_SIZE = 20;
-  int const NUM_BUFS = 10;
+  size_t const BUF_SIZE = 20;
+  size_t const NUM_BUFS = 10;
 
   static char buf[ NUM_BUFS ][ BUF_SIZE ];
-  static int  b;
+  static size_t b;
 
   //
   // See: Brian W. Kernighan, Dennis M. Ritchie.  "The C Programming Language,
@@ -133,10 +133,10 @@ void path_append( string *path, string const &component ) {
 }
 
 string path_ext( string const &path ) {
-  string const temp = base_name( path );
+  string const temp{ base_name( path ) };
   string::size_type const dot_pos = temp.find_last_of( '.' );
   if ( dot_pos == string::npos )
-    return string();
+    return string{};
   return temp.substr( dot_pos + 1 );
 }
 
@@ -147,7 +147,7 @@ string path_noext( string const &path ) {
   string::size_type const slash_pos = path.find_last_of( '/' );
   if ( slash_pos != string::npos && dot_pos < slash_pos )
     return path;
-  string temp( path );
+  string temp{ path };
   temp.resize( dot_pos );
   return temp;
 }
@@ -163,14 +163,14 @@ char const* temp_dir() {
 }
 
 string temp_path( char const *pattern ) {
-  string pattern_str( pattern );
+  string pattern_str{ pattern };
   assert( ends_with( pattern_str, "XXXXXX" ) );
 
-  string path_str( temp_dir() );
+  string path_str{ temp_dir() };
   path_append( &path_str, pattern_str );
-  unique_ptr<char[]> const mktemp_buf { new char[ path_str.size() + 1 ] };
+  unique_ptr<char[]> const mktemp_buf{ new char[ path_str.size() + 1 ] };
   ::strcpy( mktemp_buf.get(), path_str.c_str() );
-  return string( ::mktemp( mktemp_buf.get() ) );
+  return string{ ::mktemp( mktemp_buf.get() ) };
 }
 
 ///////////////////////////////////////////////////////////////////////////////
