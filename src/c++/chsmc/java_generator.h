@@ -47,8 +47,8 @@ private:
   void emit_enter_exit_end() const final;
   void emit_precondition_expr_begin( PJL::symbol const* ) const final;
   void emit_precondition_expr_end() const final;
-  void emit_precondition_func_begin( PJL::symbol const *sy_event ) const final;
-  void emit_precondition_func_end( PJL::symbol const *sy_event ) const final;
+  void emit_precondition_func_begin( PJL::symbol const* ) const final;
+  void emit_precondition_func_end( PJL::symbol const* ) const final;
   void emit_text( char const *text ) const final;
   void emit_transition_target_begin() const final;
   void emit_transition_target_end() const final;

@@ -78,350 +78,349 @@ typedef std::vector<fn_param> fn_param_list;
  */
 class lang_parser {
 public:
-    /**
-     * A %token represents a fundamental grammar building block.
-     */
-    class token {
-    public:
-      enum type {
-        NONE,
-        IDENTIFIER  = 0x81,
-        NUMBER      = 0x82,
-        AMPER       = '&',
-        LPAREN      = '(',
-        RPAREN      = ')',
-        STAR        = '*',
-        COMMA       = ',',
-        DOT         = '.',
-        SLASH       = '/',
-        COLON       = ':',
-        LANGLE      = '<',
-        EQUAL       = '=',
-        RANGLE      = '>',
-        LBRACKET    = '[',
-        RBRACKET    = ']',
-      };
-
-      /**
-       * Constructs a %token.
-       *
-       * @param t The type of %token to construct.
-       */
-      explicit token( type tt = NONE );
-
-      /**
-       * Constructs a %token.
-       *
-       * @param c The character representing a %token.
-       */
-      explicit token( char c );
-
-      /**
-       * Constructs a %token.
-       *
-       * @param tt The type of %token to construct.
-       * @param s The %token string.
-       */
-      explicit token( type tt, std::string const &s );
-
-      token( token const &t ) = default;
-      token( token &&other );
-      token& operator=( token const &t ) = default;
-      token& operator=( token &&t );
-
-      /**
-       * Gets a string representation of the %token.
-       *
-       * @return Returns said string.
-       */
-      std::string as_str() const;
-
-      /**
-       * Clears this %token.
-       */
-      void clear() {
-        str_.clear();
-        type_ = NONE;
-      }
-
-      /**
-       * Gets the character value of the %token only when has_char() returns
-       * `true`.
-       *
-       * @return Returns said character.
-       */
-      char get_char() const;
-
-      /**
-       * Gets the string value of the %token only when has_str() returns
-       * `true`.
-       *
-       * @return Returns said string.
-       */
-      std::string const& get_str() const;
-
-      /**
-       * Gets the type of this %token.
-       *
-       * @return Returns said type.
-       */
-      type get_type() const {
-        return type_;
-      }
-
-      /**
-       * Gets whether this %token has a character.
-       *
-       * @return Returns `true` only if the %token type is not #NONE,
-       * #IDENTIFIER, or #NUMBER.
-       */
-      bool has_char() const;
-
-      /**
-       * Gets whether this %token has a string.
-       *
-       * @return Returns `true` only if the %token type is #IDENTIFIER or
-       * #NUMBER.
-       */
-      bool has_str() const;
-
-      /**
-       * Checks whether the token represents a punctuation character.
-       *
-       * @return Returns `true` only if it does.
-       */
-      bool is_punct() const;
-
-      /**
-       * Swaps this %token with another.
-       *
-       * @param t The other %token to swap with.
-       */
-      void swap( token &t );
-
-      /**
-       * Conversion to `bool`.
-       *
-       * @return Returns `true` only if the %token's type is not #NONE.
-       */
-      operator bool() const {
-        return type_ != NONE;
-      }
-
-      /**
-       * Gets whether this %token's type is #NONE.
-       *
-       * @return Returns `true` only if the %token's type is #NONE.
-       */
-      bool operator!() const {
-        return type_ == NONE;
-      }
-
-    private:
-      std::string str_;
-      type type_;
+  /**
+   * A %token represents a fundamental grammar building block.
+   */
+  class token {
+  public:
+    enum type {
+      NONE,
+      IDENTIFIER  = 0x81,
+      NUMBER      = 0x82,
+      AMPER       = '&',
+      LPAREN      = '(',
+      RPAREN      = ')',
+      STAR        = '*',
+      COMMA       = ',',
+      DOT         = '.',
+      SLASH       = '/',
+      COLON       = ':',
+      LANGLE      = '<',
+      EQUAL       = '=',
+      RANGLE      = '>',
+      LBRACKET    = '[',
+      RBRACKET    = ']',
     };
 
     /**
-     * An %exception is thrown for a parsing error.
-     */
-    class exception final : public std::exception {
-    public:
-      explicit exception( std::string const &msg ) : msg_{ msg } { }
-      virtual ~exception();
-
-      virtual const char* what() const noexcept override;
-
-    private:
-      std::string msg_;
-    };
-
-    virtual ~lang_parser();
-
-    /**
-     * Clears this %lang_parser.
-     */
-    void clear();
-
-    /**
-     * Creates a %lang_parser for the given language.
+     * Constructs a %token.
      *
-     * @param l The language to create the %lang_parser for.
-     * @param is The input stream to use.
-     * @return Returns said %lang_parser.
+     * @param t The type of %token to construct.
      */
-    static std::unique_ptr<lang_parser> create( lang l, std::istream &is );
+    explicit token( type tt = NONE );
 
     /**
-     * Parses a parameter list of a function in a particular language.
+     * Constructs a %token.
      *
-     * @return Returns a list of parsed parameters.
+     * @param c The character representing a %token.
      */
-    fn_param_list parse_param_list();
+    explicit token( char c );
 
     /**
-     * Parses (and ignores) and comment.  By default, C/C++/Go/Java comments
-     * are recognized.
+     * Constructs a %token.
      *
-     * @param c The first character of the comment.
+     * @param tt The type of %token to construct.
+     * @param s The %token string.
      */
-    virtual void parse_comment( char c );
+    explicit token( type tt, std::string const &s );
 
-protected:
-    /**
-     * Constructs a %lang_parser.
-     *
-     * @param is The input stream to use to get characters.
-     */
-    explicit lang_parser( std::istream &is );
-
-    ////////// parsing ////////////////////////////////////////////////////////
+    token( token const &t ) = default;
+    token( token &&other );
+    token& operator=( token const &t ) = default;
+    token& operator=( token &&t );
 
     /**
-     * Parses an identifier.  By default, an identifier starts with a letter or
-     * underscore and is followed by zero or more letters, digits, or
-     * underscores.
+     * Gets a string representation of the %token.
      *
-     * @param c The first character of the identifier.
-     * @return Returns said identifier.
+     * @return Returns said string.
      */
-    virtual std::string parse_identifier_( char c );
+    std::string as_str() const;
 
     /**
-     * Parses a number.
-     *
-     * @param c The first character of the number.
-     * @return Returns said number (as a string).
+     * Clears this %token.
      */
-    virtual std::string parse_number_( char c );
-
-    ////////// token //////////////////////////////////////////////////////////
-
-    /**
-     * Gets and consumes the next token.
-     *
-     * @return Returns the next token.
-     */
-    virtual token get_token_();
-
-    /**
-     * Gets and consumes the next token, but only if its type is \a tt; if not,
-     * no token is consumed.
-     *
-     * @param tt The type of token to request.
-     * @return Returns a token of the requested type or the #NONE token if
-     * either the token's type is not \a tt or there are no more tokens.
-     */
-    token get_token_if_type_( token::type tt );
-
-    /**
-     * Gets and consumes the next token.  If not #NONE, it \e must be of type
-     * \a tt; otherwise, throws an exception.
-     *
-     * @param tt The type of token to request.
-     * @return Returns the next token.
-     * @throws exception only if there is a next token and its type is not \a
-     * tt.
-     */
-    token get_token_of_type_( token::type tt );
-
-    /**
-     * Gets whether the token represents the end of the current parameter being
-     * parsed.
-     *
-     * @param t The token to check.
-     * @return Returns `true` only if it does.
-     */
-    virtual bool is_param_end_( token const &t );
-
-    /**
-     * Gets, but does not consume, the next token.  At most one token can be
-     * peeked.
-     *
-     * @return Returns the next token or the #NONE token if none is available.
-     */
-    token peek_token_();
-
-    /**
-     * Gets and consumes the next token.  If no token is available, throws an
-     * exception.
-     *
-     * @return Returns said token.
-     * @throws exception is no token is available.
-     */
-    token require_token_();
-
-    /**
-     * Gets and consumes the next token.  If no token is available, or its type
-     * type is not \a tt, throws an exception.
-     *
-     * @param tt The type of token to require.
-     * @return Returns said token.
-     * @throws exception only if there is no next token or its type is not \a
-     * tt.
-     */
-    token require_token_of_type_( token::type tt );
-
-    /**
-     * Ungets \a t and makes it available for subsequent getting.  At most one
-     * token can be "ungot" consecutively.
-     *
-     * @param t The token to unget.
-     */
-    void unget_token_( token const &t );
-
-    ////////// character //////////////////////////////////////////////////////
-
-    /**
-     * Gets and consumes the next character from the input.
-     *
-     * @return Returns the character or `\0` if none is available.
-     */
-    char get_char_();
-
-    /**
-     * Gets, but does not consume, the next character from the input.  At most
-     * one character can be peeked.
-     *
-     * @return Returns the character or `\0` if none is available.
-     */
-    char peek_char_();
-
-    /**
-     * Ungets \a c and makes it available for subsequent getting.  At most one
-     * character can be "ungot" consecutively.
-     *
-     * @param c The character to unget.
-     */
-    void unget_char_( char c );
-
-    ////////// miscellaneous //////////////////////////////////////////////////
-
-    /**
-     * Gets whether we're still within parentheses.
-     *
-     * @return Returns `true` only if we are.
-     */
-    bool within_parens_() const {
-      return parens_.size() - started_with_lparen_ > 0;
+    void clear() {
+      str_.clear();
+      type_ = NONE;
     }
 
+    /**
+     * Gets the character value of the %token only when has_char() returns
+     * `true`.
+     *
+     * @return Returns said character.
+     */
+    char get_char() const;
+
+    /**
+     * Gets the string value of the %token only when has_str() returns `true`.
+     *
+     * @return Returns said string.
+     */
+    std::string const& get_str() const;
+
+    /**
+     * Gets the type of this %token.
+     *
+     * @return Returns said type.
+     */
+    type get_type() const {
+      return type_;
+    }
+
+    /**
+     * Gets whether this %token has a character.
+     *
+     * @return Returns `true` only if the %token type is not #NONE,
+     * #IDENTIFIER, or #NUMBER.
+     */
+    bool has_char() const;
+
+    /**
+     * Gets whether this %token has a string.
+     *
+     * @return Returns `true` only if the %token type is #IDENTIFIER or
+     * #NUMBER.
+     */
+    bool has_str() const;
+
+    /**
+     * Checks whether the token represents a punctuation character.
+     *
+     * @return Returns `true` only if it does.
+     */
+    bool is_punct() const;
+
+    /**
+     * Swaps this %token with another.
+     *
+     * @param t The other %token to swap with.
+     */
+    void swap( token &t );
+
+    /**
+     * Conversion to `bool`.
+     *
+     * @return Returns `true` only if the %token's type is not #NONE.
+     */
+    explicit operator bool() const {
+      return type_ != NONE;
+    }
+
+    /**
+     * Gets whether this %token's type is #NONE.
+     *
+     * @return Returns `true` only if the %token's type is #NONE.
+     */
+    bool operator!() const {
+      return type_ == NONE;
+    }
+
+  private:
+    std::string str_;
+    type type_;
+  };
+
+  /**
+   * An %exception is thrown for a parsing error.
+   */
+  class exception final : public std::exception {
+  public:
+    explicit exception( std::string const &msg ) : msg_{ msg } { }
+    virtual ~exception();
+
+    virtual const char* what() const noexcept final;
+
+  private:
+    std::string msg_;
+  };
+
+  virtual ~lang_parser();
+
+  /**
+   * Clears this %lang_parser.
+   */
+  void clear();
+
+  /**
+   * Creates a %lang_parser for the given language.
+   *
+   * @param l The language to create the %lang_parser for.
+   * @param is The input stream to use.
+   * @return Returns said %lang_parser.
+   */
+  static std::unique_ptr<lang_parser> create( lang l, std::istream &is );
+
+  /**
+   * Parses a parameter list of a function in a particular language.
+   *
+   * @return Returns a list of parsed parameters.
+   */
+  fn_param_list parse_param_list();
+
+  /**
+   * Parses (and ignores) and comment.  By default, C/C++/Go/Java comments are
+   * recognized.
+   *
+   * @param c The first character of the comment.
+   */
+  virtual void parse_comment( char c );
+
+protected:
+  /**
+   * Constructs a %lang_parser.
+   *
+   * @param is The input stream to use to get characters.
+   */
+  explicit lang_parser( std::istream &is );
+
+  ////////// parsing //////////////////////////////////////////////////////////
+
+  /**
+   * Parses an identifier.  By default, an identifier starts with a letter or
+   * underscore and is followed by zero or more letters, digits, or
+   * underscores.
+   *
+   * @param c The first character of the identifier.
+   * @return Returns said identifier.
+   */
+  virtual std::string parse_identifier_( char c );
+
+  /**
+   * Parses a number.
+   *
+   * @param c The first character of the number.
+   * @return Returns said number (as a string).
+   */
+  virtual std::string parse_number_( char c );
+
+  ////////// token ////////////////////////////////////////////////////////////
+
+  /**
+   * Gets and consumes the next token.
+   *
+   * @return Returns the next token.
+   */
+  virtual token get_token_();
+
+  /**
+   * Gets and consumes the next token, but only if its type is \a tt; if not,
+   * no token is consumed.
+   *
+   * @param tt The type of token to request.
+   * @return Returns a token of the requested type or the #NONE token if either
+   * the token's type is not \a tt or there are no more tokens.
+   */
+  token get_token_if_type_( token::type tt );
+
+  /**
+   * Gets and consumes the next token.  If not #NONE, it \e must be of type
+   * \a tt; otherwise, throws an exception.
+   *
+   * @param tt The type of token to request.
+   * @return Returns the next token.
+   * @throws exception only if there is a next token and its type is not \a
+   * tt.
+   */
+  token get_token_of_type_( token::type tt );
+
+  /**
+   * Gets whether the token represents the end of the current parameter being
+   * parsed.
+   *
+   * @param t The token to check.
+   * @return Returns `true` only if it does.
+   */
+  virtual bool is_param_end_( token const &t );
+
+  /**
+   * Gets, but does not consume, the next token.  At most one token can be
+   * peeked.
+   *
+   * @return Returns the next token or the #NONE token if none is available.
+   */
+  token peek_token_();
+
+  /**
+   * Gets and consumes the next token.  If no token is available, throws an
+   * exception.
+   *
+   * @return Returns said token.
+   * @throws exception is no token is available.
+   */
+  token require_token_();
+
+  /**
+   * Gets and consumes the next token.  If no token is available, or its type
+   * type is not \a tt, throws an exception.
+   *
+   * @param tt The type of token to require.
+   * @return Returns said token.
+   * @throws exception only if there is no next token or its type is not \a
+   * tt.
+   */
+  token require_token_of_type_( token::type tt );
+
+  /**
+   * Ungets \a t and makes it available for subsequent getting.  At most one
+   * token can be "ungot" consecutively.
+   *
+   * @param t The token to unget.
+   */
+  void unget_token_( token const &t );
+
+  ////////// character //////////////////////////////////////////////////////
+
+  /**
+   * Gets and consumes the next character from the input.
+   *
+   * @return Returns the character or `\0` if none is available.
+   */
+  char get_char_();
+
+  /**
+   * Gets, but does not consume, the next character from the input.  At most
+   * one character can be peeked.
+   *
+   * @return Returns the character or `\0` if none is available.
+   */
+  char peek_char_();
+
+  /**
+   * Ungets \a c and makes it available for subsequent getting.  At most one
+   * character can be "ungot" consecutively.
+   *
+   * @param c The character to unget.
+   */
+  void unget_char_( char c );
+
+  ////////// miscellaneous //////////////////////////////////////////////////
+
+  /**
+   * Gets whether we're still within parentheses.
+   *
+   * @return Returns `true` only if we are.
+   */
+  bool within_parens_() const {
+    return parens_.size() - started_with_lparen_ > 0;
+  }
+
 private:
-    std::istream &is_;
-    std::stack<char> parens_;           // stack of "(<[" characters
-    token peeked_token_;                // peeked (or ungotten) token
-    bool started_with_lparen_;          // did istream start with '('?
+  std::istream &is_;
+  std::stack<char> parens_;             // stack of "(<[" characters
+  token peeked_token_;                  // peeked (or ungotten) token
+  bool started_with_lparen_;            // did istream start with '('?
 
-    static token const NONE;
+  static token const NONE;
 
-    char get_char_from_istream_();
+  char get_char_from_istream_();
 
-    [[noreturn]] static void unexpected_char( char c );
+  [[noreturn]] static void unexpected_char( char c );
 
-    [[noreturn]] static void unexpected_token( token const &t = NONE,
-                                               token::type tt = token::NONE );
+  [[noreturn]] static void unexpected_token( token const &t = NONE,
+                                             token::type tt = token::NONE );
 
-    virtual bool parse_param_( fn_param *param ) = 0;
+  virtual bool parse_param_( fn_param *param ) = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

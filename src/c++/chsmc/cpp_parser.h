@@ -31,11 +31,11 @@
  */
 class cpp_parser : public lang_parser {
 public:
-    explicit cpp_parser( std::istream &is ) : lang_parser{ is } {
-    }
+  explicit cpp_parser( std::istream &is ) : lang_parser{ is } {
+  }
 
 private:
-    bool parse_param_( fn_param* ) override;
+  bool parse_param_( fn_param* ) override;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
