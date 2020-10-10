@@ -252,7 +252,7 @@ ostream& machine::dout() const {
 }
 
 void machine::dump_state() const {
-  lock_type const lock( mutex_ );
+  lock_type const lock{ mutex_ };
   dout() << "current state:" ENDL;
   for ( auto const &state : *this )
     dout() << ' ' << (state.active() ? '*' : ' ') << state.name() ENDL;
