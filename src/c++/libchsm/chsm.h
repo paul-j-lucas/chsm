@@ -501,7 +501,7 @@ public:
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-public:
+protected:
   /////////////////////////////////////////////////////////////////////////////
   // Note: Even though this section is protected (as opposed to private), it //
   // is so that derived classes emitted by the CHSM-to-C++ compiler will     //
@@ -566,13 +566,6 @@ public:
     friend class event;
   };
 
-protected:
-  /////////////////////////////////////////////////////////////////////////////
-  // Note: Even though this section is protected (as opposed to private), it //
-  // is so that derived classes emitted by the CHSM-to-C++ compiler will     //
-  // have access and it is not the intent that end users will.               //
-  /////////////////////////////////////////////////////////////////////////////
-
   /**
    * @internal
    *
@@ -629,7 +622,9 @@ private:
    *
    * @return Returns `true` only if this %event has no transitions.
    */
-  bool empty() const;
+  bool empty() const {
+    return *transitions_ == NO_TRANSITION_ID_;
+  }
 
   /**
    * Does a broadcast, but locks first.
@@ -788,10 +783,6 @@ private:
 
 ////////// inlines ////////////////////////////////////////////////////////////
 
-inline bool event::empty() const {
-  return *transitions_ == NO_TRANSITION_ID_;
-}
-
 /**
  * Compares two events for equality.
  *
@@ -803,7 +794,7 @@ inline bool event::empty() const {
  * @param j The second event.
  * @return Returns `true` only if the events are equal.
  */
-inline bool operator==( event const &i, event const &j ) {
+constexpr bool operator==( event const &i, event const &j ) {
   return &i == &j;
 }
 
@@ -818,7 +809,7 @@ inline bool operator==( event const &i, event const &j ) {
  * @param j The second event.
  * @return Returns `true` only if the events are not equal.
  */
-inline bool operator!=( event const &i, event const &j ) {
+constexpr bool operator!=( event const &i, event const &j ) {
   return !(i == j);
 }
 
@@ -960,7 +951,7 @@ public:
      * increment.
      */
     const_iterator operator++(int) {
-      return const_iterator( p_++ );
+      return const_iterator{ p_++ };
     }
 
     /**
@@ -1008,7 +999,7 @@ public:
    * @return Returns said iterator.
    */
   const_iterator begin() const {
-    return const_iterator( state_ );
+    return const_iterator{ state_ };
   }
 
   /**
@@ -1018,7 +1009,7 @@ public:
    * @return Returns said iterator.
    */
   const_iterator end() const {
-    return const_iterator( static_cast<const_iterator::iter_type>( &NIL_ ) );
+    return const_iterator{ static_cast<const_iterator::iter_type>( &NIL_ ) };
   }
 
   /**
@@ -1441,7 +1432,7 @@ public:
      * iterator was positioned at prior to the increment.
      */
     const_iterator operator++(int) {
-      return const_iterator( p_, c_++ );
+      return const_iterator{ p_, c_++ };
     }
 
     /**
@@ -1472,7 +1463,7 @@ public:
     pointer const  *p_;
     child_list      c_;
 
-    const_iterator( pointer const *p, child_list c ) : p_( p ), c_( c ) { }
+    const_iterator( pointer const *p, child_list c ) : p_{ p }, c_{ c } { }
 
     friend class parent;
   };
@@ -1484,7 +1475,7 @@ public:
    * @return Returns said iterator.
    */
   const_iterator begin() const {
-    return const_iterator( machine_.state_, children_ );
+    return const_iterator{ machine_.state_, children_ };
   }
 
   /**
@@ -1494,7 +1485,7 @@ public:
    * @return Returns said iterator.
    */
   const_iterator end() const {
-    return const_iterator( nullptr, &NO_CHILD_ID_ );
+    return const_iterator{ nullptr, &NO_CHILD_ID_ };
   }
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
