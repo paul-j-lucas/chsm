@@ -211,8 +211,6 @@ protected:
    */
   machine &machine_;
 
-  std::ostream& dout() const;
-
   /**
    * Enters a %state.
    *
@@ -625,7 +623,6 @@ private:
   transition_list const transitions_;
 
   bool is_debug_events() const;
-  std::ostream& dout() const;
 
   /**
    * Returns whether this %event has no transitions.
@@ -1183,6 +1180,14 @@ private:
    */
   void algorithm();
 
+  /**
+   * @internal
+   *
+   * Emits the debugging preamble, including indenting the current number of
+   * spaces.
+   *
+   * @return Returns the stream to continue emitting debugging information to.
+   */
   std::ostream& dout() const;
 
   friend class event;
@@ -1256,9 +1261,9 @@ public:
   void deep_clear() override;
 
   /**
-   * Returns whether this parent has any child states.
+   * Returns whether this parent has no child states.
    *
-   * @return Returns `true` only if this parent has any child states.
+   * @return Returns `true` only if this parent has no child states.
    */
   bool empty() const {
     return *children_ == NO_CHILD_ID_;

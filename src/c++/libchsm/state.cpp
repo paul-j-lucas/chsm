@@ -48,10 +48,6 @@ void state::deep_clear() {
   // do nothing
 }
 
-ostream& state::dout() const {
-  return machine_.dout();
-}
-
 bool state::enter( event const &trigger, state* ) {
   if ( active() )
     return false;
@@ -85,7 +81,7 @@ bool state::enter( event const &trigger, state* ) {
   }
 
   if ( machine_.is_debug( machine::DEBUG_ENTER_EXIT ) )
-    dout() << "entering: " << name() ENDL;
+    machine_.dout() << "entering: " << name() ENDL;
 
   state_ = STATE_ACTIVE;
 
@@ -123,7 +119,7 @@ bool state::exit( event const &trigger, state *to ) {
   state_ = STATE_INACTIVE;
 
   if ( machine_.is_debug( machine::DEBUG_ENTER_EXIT ) )
-    dout() << "exiting : " << name() ENDL;
+    machine_.dout() << "exiting : " << name() ENDL;
 
   //
   // For this state, broadcast exited(*this), but only if there are any

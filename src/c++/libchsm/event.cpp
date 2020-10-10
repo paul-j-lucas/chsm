@@ -38,10 +38,6 @@ inline bool event::is_debug_events() const {
   return machine_.is_debug( machine::DEBUG_EVENTS );
 }
 
-inline ostream& event::dout() const {
-  return machine_.dout();
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 
 event::event( CHSM_EVENT_ARGS ) :
@@ -70,7 +66,7 @@ void event::broadcast( void *pb ) {
     ++e->in_progress_;
 
   if ( is_debug_events() )
-    dout() << "broadcast: " << name() ENDL;
+    machine_.dout() << "broadcast: " << name() ENDL;
 
   bool is_precondition_true;
   if ( (param_block_ = pb) != nullptr ) {
@@ -98,7 +94,7 @@ void event::broadcast( void *pb ) {
     }
 
     if ( is_debug_events() )
-      dout()
+      machine_.dout()
         << "+ precondition: " << (is_precondition_true ? "true" : "false") ENDL;
   }
   else {
@@ -111,7 +107,7 @@ void event::broadcast( void *pb ) {
     //
     machine_.event_queue_.push_back( this );
     if ( is_debug_events() )
-      dout() << "queued   : " << name() ENDL;
+      machine_.dout() << "queued   : " << name() ENDL;
     machine_.algorithm();
   }
   else {
@@ -119,7 +115,7 @@ void event::broadcast( void *pb ) {
     // This event is not to be queued: destroy its parameter block and return.
     //
     if ( is_debug_events() )
-      dout() << "broadcast: " << name() << " -- cancelled" ENDL;
+      machine_.dout() << "broadcast: " << name() << " -- cancelled" ENDL;
     broadcasted();
   }
 }
@@ -149,7 +145,7 @@ void event::broadcasted() {
 
 bool event::find_transition() {
   if ( is_debug_events() )
-    dout() << "+ checking transitions" ENDL;
+    machine_.dout() << "+ checking transitions" ENDL;
 
   bool found = false;
 
@@ -217,7 +213,7 @@ bool event::find_transition() {
       found = true;
 
       if ( is_debug_events() ) {
-        dout() << "+ found  : " << from.name();
+        machine_.dout() << "+ found  : " << from.name();
         if ( !t->is_internal() )
           MORE << " -> " << machine_.target_[ t.id() ]->name();
         else
