@@ -79,9 +79,9 @@ struct  transition;
 #define CHSM_ACTUAL(X)  /* nothing */
 
 /**
- * A %state is the simplest kind of state in a machine: it has no
- * child states.  A %state can either be active (in the state) or inactive (not
- * in the state); a state may have a parent, and enter/exit actions.
+ * A %state is the simplest kind of state in a machine: it has no child states.
+ * A %state can either be active (in the state) or inactive (not in the state);
+ * a state may have a parent and enter/exit actions.
  *
  * The %state class can be extended either to add additional data members and
  * member functions, or to alter its behavior upon being entered or exited.
@@ -142,7 +142,7 @@ public:
    * @code
    *  class place : public CHSM::state {
    *  public:
-   *    place( CHSM_STATE_ARGS ) : CHSM::state( CHSM_STATE_INIT ) {
+   *    place( CHSM_STATE_ARGS ) : CHSM::state{ CHSM_STATE_INIT } {
    *      // ...
    *    }
    *    // ...
@@ -640,8 +640,13 @@ private:
    */
   class const_iterator {
   public:
+    /** The type of the value returned by iterator and const_iterator. */
     typedef transition value_type;
+
+    /** A pointer to a `const value_type`. */
     typedef value_type const* const_pointer;
+
+    /** A reference to a `const value_type`. */
     typedef value_type const& const_reference;
 
     /**
@@ -704,8 +709,8 @@ private:
     /**
      * Compares two iterators for equality.
      *
-     * @param i The first %iterator.
-     * @param j The second %iterator.
+     * @param i The first iterator.
+     * @param j The second iterator.
      * @return Returns `true` only if the two iterators are positioned at the
      * same transition.
      */
@@ -716,8 +721,8 @@ private:
     /**
      * Compares two iterators for inequality.
      *
-     * @param i The first %iterator.
-     * @param j The second %iterator.
+     * @param i The first iterator.
+     * @param j The second iterator.
      * @return Returns `true` only if the two iterators are not positioned at
      * the same transition.
      */
@@ -737,6 +742,9 @@ private:
     }
 
   private:
+    /**
+     * Bumps the iterator to the next transition, if any.
+     */
     void bump();
 
     friend class event;
@@ -1357,7 +1365,7 @@ public:
     pointer const  *p_;
     child_list      c_;
 
-    iterator( pointer const *p, child_list c ) : p_( p ), c_( c ) { }
+    iterator( pointer const *p, child_list c ) : p_{ p }, c_{ c } { }
 
     friend class parent;
   };
@@ -1369,7 +1377,7 @@ public:
    * @return Returns said iterator.
    */
   iterator begin() {
-    return iterator( machine_.state_, children_ );
+    return iterator{ machine_.state_, children_ };
   }
 
   /**
@@ -1379,7 +1387,7 @@ public:
    * @return Returns said iterator.
    */
   iterator end() {
-    return iterator( nullptr, &NO_CHILD_ID_ );
+    return iterator{ nullptr, &NO_CHILD_ID_ };
   }
 
   class const_iterator;
@@ -1497,8 +1505,8 @@ protected:
    * Constructs a parent.
    */
   parent( CHSM_PARENT_ARGS ) :
-    state( CHSM_STATE_INIT ),
-    children_( chsm_children_ )
+    state{ CHSM_STATE_INIT },
+    children_{ chsm_children_ }
   {
   }
 
