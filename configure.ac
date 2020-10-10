@@ -65,17 +65,6 @@ AS_IF([test x$enable_stack_debug = xyes],
     [Define to 1 if CHSM debugging is enabled.])]
 )
 
-# Program feature: multithreading (enabled by default)
-AC_ARG_ENABLE([multithreading],
-  AS_HELP_STRING([--disable-multithreading], [disable multithreading for CHSM runtime]),
-  [],
-  [enable_multithreading=yes]
-)
-AS_IF([test x$enable_multithreading = xyes],
-  [AC_DEFINE([ENABLE_MULTITHREADING], [1],
-    [Define to 1 if CHSM multithreading is enabled.])]
-)
-
 # Program feature: yacc debug (disabled by default)
 AC_ARG_ENABLE([yydebug],
   AS_HELP_STRING([--enable-yydebug], [enable support for yacc debugging]),
@@ -121,7 +110,6 @@ fi
 # Makefile conditionals.
 AM_CONDITIONAL([ENABLE_GROOVY],         [test x$enable_groovy         = xyes])
 AM_CONDITIONAL([ENABLE_JAVA],           [test x$enable_java           = xyes])
-AM_CONDITIONAL([ENABLE_MULTITHREADING], [test x$enable_multithreading = xyes])
 AM_CONDITIONAL([ENABLE_STACK_DEBUG],    [test x$enable_stack_debug    = xyes])
 AM_CONDITIONAL([ENABLE_YYDEBUG],        [test x$enable_yydebug        = xyes])
 
