@@ -64,7 +64,7 @@ namespace CHSM_NS {
 ///////////////////////////////////////////////////////////////////////////////
 
 typedef std::recursive_mutex mutex_type;
-typedef std::lock_guard<mutex_type> lock_type;
+typedef std::unique_lock<mutex_type> lock_type;
 
 class   machine;
 class   state;
@@ -526,7 +526,7 @@ public:
      *
      * @param e The event to be a parameter block for.
      */
-    explicit param_block( event const &e ) : chsm_event_( e ) { }
+    explicit param_block( event const &e ) : chsm_event_{ e } { }
 
     /**
      * Destroys a %param_block.
@@ -704,7 +704,7 @@ private:
      * the original iterator was positioned at prior to the increment.
      */
     const_iterator operator++(int) {
-      auto const temp( *this );
+      auto const temp{ *this };
       ++*this;
       return temp;
     }
@@ -739,7 +739,7 @@ private:
     event const      *base_event_;      ///< Base event, if any.
 
     const_iterator( const_pointer t, transition_list id, event const *b ) :
-      t_( t ), t_id_( id ), base_event_( b )
+      t_{ t }, t_id_{ id }, base_event_{ b }
     {
       bump();
     }
@@ -765,7 +765,7 @@ private:
    * @return Returns said iterator.
    */
   const_iterator end() const {
-    return const_iterator( nullptr, &NO_TRANSITION_ID_, nullptr );
+    return const_iterator{ nullptr, &NO_TRANSITION_ID_, nullptr };
   }
 
   /**
@@ -994,7 +994,12 @@ public:
     typedef const_pointer const *iter_type;
     iter_type p_;
 
-    explicit const_iterator( iter_type p ) : p_( p ) { }
+    /**
+     * Constructs a %const_iterator.
+     *
+     * @param p A pointer to a pointer to the first state in the machine.
+     */
+    explicit const_iterator( iter_type p ) : p_{ p } { }
 
     friend class machine;
   };
@@ -1109,7 +1114,7 @@ protected:
    *  class my_machine : public CHSM::machine {
    *  public:
    *    my_machine( CHSM_MACHINE_ARGS ) : 
-   *      CHSM::machine( CHSM_MACHINE_INIT ) {
+   *      CHSM::machine{ CHSM_MACHINE_INIT } {
    *      // ...
    *    }
    *    // ...
@@ -1662,7 +1667,7 @@ public:
    * `CHSM_SET_INIT` can be used to avoid having to deal with the many
    * constructor arguments.  See CHSM::state for an example.
    */
-  set( CHSM_SET_ARGS ) : parent( CHSM_PARENT_INIT ) { }
+  set( CHSM_SET_ARGS ) : parent{ CHSM_PARENT_INIT } { }
 
   /**
    * Enters a %set via a transition and also enters all of its child states.
@@ -1691,7 +1696,7 @@ public:
 ///////////////////////////////////////////////////////////////////////////////
 
 struct event::machine_lock : lock_type {
-  machine_lock( machine &m ) : lock_type( m.mutex_ ) { }
+  explicit machine_lock( machine &m ) : lock_type{ m.mutex_ } { }
 };
 
 ////////// inlines ////////////////////////////////////////////////////////////
@@ -1701,7 +1706,7 @@ inline event::const_iterator event::begin() const {
   // This has to be defined down here so that the declaration for the machine
   // class has been seen by the C++ compiler.
   //
-  return const_iterator( machine_.transition_, transitions_, base_event_ );
+  return const_iterator{ machine_.transition_, transitions_, base_event_ };
 }
 
 inline bool machine::active() const {

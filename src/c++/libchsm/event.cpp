@@ -237,7 +237,7 @@ bool event::find_transition() {
 }
 
 void event::lock_broadcast() {
-  machine_lock const lock( machine_ );
+  machine_lock const lock{ machine_ };
   broadcast( nullptr );
 }
 
