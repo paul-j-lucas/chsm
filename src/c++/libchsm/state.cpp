@@ -166,6 +166,7 @@ bool state::exit( event const &trigger, state *to ) {
       parent_of()->exit( trigger, to );
     }
   }
+
   return true;
 }
 
