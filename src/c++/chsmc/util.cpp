@@ -53,13 +53,6 @@ char const* base_name( char const *path ) {
   return path;
 }
 
-string base_name( string const &path ) {
-  string::size_type const slash_pos = path.find_last_of( '/' );
-  if ( slash_pos != string::npos )
-    return path.substr( slash_pos + (slash_pos < path.size()) );
-  return path;
-}
-
 bool ends_with( string const &s, string const &suffix ) {
   return  s.size() >= suffix.size() &&
           s.compare( s.size() - suffix.size(), suffix.size(), suffix ) == 0;
@@ -122,26 +115,6 @@ char opening_char( char c ) {
     case '}': return '{' ;
     default : return '\0';
   } // switch
-}
-
-string path_ext( string const &path ) {
-  string const temp{ base_name( path ) };
-  string::size_type const dot_pos = temp.find_last_of( '.' );
-  if ( dot_pos == string::npos )
-    return string{};
-  return temp.substr( dot_pos + 1 );
-}
-
-string path_noext( string const &path ) {
-  string::size_type const dot_pos = path.find_last_of( '.' );
-  if ( dot_pos == string::npos )
-    return path;
-  string::size_type const slash_pos = path.find_last_of( '/' );
-  if ( slash_pos != string::npos && dot_pos < slash_pos )
-    return path;
-  string temp{ path };
-  temp.resize( dot_pos );
-  return temp;
 }
 
 void perror_exit( int status ) {

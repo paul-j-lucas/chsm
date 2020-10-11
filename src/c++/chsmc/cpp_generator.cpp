@@ -345,7 +345,7 @@ cpp_generator::get_filename_exts() const {
 
 void cpp_declarer::emit() {
   string const include_guard =
-    PJL::identify( PJL::base_name( cc.source_->path() ) ) + "_H";
+    PJL::identify( cc.source_->path().filename() ) + "_H";
 
   T_OUT << inc_indent;
 

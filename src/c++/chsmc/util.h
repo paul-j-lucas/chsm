@@ -243,20 +243,6 @@ operator<<( std::basic_ostream<charT,Traits> &o,
 char const* base_name( char const *path );
 
 /**
- * Extracts the base portion of a path-name.
- * Unlike **basename**(3):
- *  + Trailing `/` characters are not deleted.
- *  + \a path is never modified (hence can therefore be `const`).
- *  + Returns a pointer within \a path (hence is multi-call safe).
- *
- * @param path The path-name to extract the base portion of.
- * @return Returns a pointer to the last component of \a path.
- * If \a path consists entirely of `/` characters, a pointer to the string `/`
- * is returned.
- */
-std::string base_name( std::string const &path );
-
-/**
  * Clears the given stack.
  *
  * @tparam T The stack's element type.
@@ -318,23 +304,6 @@ inline char const* itoa( int n ) {
  * @return Returns said "opening" character or the null byte if none.
  */
 char opening_char( char c );
-
-/**
- * Extracts the file-name extension.
- *
- * @param path The path to extract from.
- * @return Returns the extension of \a path (without the `.`) or the empty
- * string if there is no extension.
- */
-std::string path_ext( std::string const &path );
-
-/**
- * Extracts the portion of the path-name before the filename extension.
- *
- * @param path The path to extract from.
- * @return Returns \a path without its filename extension, if any.
- */
-std::string path_noext( std::string const &path );
 
 /**
  * Prints an error message for `errno` to standard error and exits.
