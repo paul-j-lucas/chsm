@@ -101,6 +101,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+//
+// std::filesystem::path::operator+=() exists yet operator+() doesn't.  These
+// operators fix that omission.
+//
+
 inline std::filesystem::path operator+( std::filesystem::path const &p1,
                                         std::filesystem::path const &p2 ) {
   std::filesystem::path rv{ p1 };
@@ -115,10 +120,25 @@ inline std::filesystem::path operator+( std::filesystem::path const &p,
   return rv;
 }
 
+inline std::filesystem::path operator+( std::string const &s,
+                                        std::filesystem::path const &p ) {
+  std::filesystem::path rv{ s };
+  rv += p;
+  return rv;
+}
+
 inline std::filesystem::path operator+( std::filesystem::path const &p,
                                         char c ) {
   std::filesystem::path rv{ p };
   rv += c;
+  return rv;
+}
+
+inline std::filesystem::path operator+( char c,
+                                        std::filesystem::path const &p ) {
+  char const s[]{ c, '\0' };
+  std::filesystem::path rv{ s };
+  rv += p;
   return rv;
 }
 
