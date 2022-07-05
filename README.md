@@ -19,9 +19,12 @@ you can alternatively specify a statechart using
 instead of using CHSM's specification language.
 
 CHSM has been used successfullly in production environments
-such as CERN, Philips, Qualcomm,
-and for the
-[ANTARES](http://antares.in2p3.fr/) neutrino telescope project.
+such as the
+[ANTARES neutrino telescope project](http://antares.in2p3.fr/),
+CERN (for the [ATLAS experiment](https://atlas.cern)),
+Philips,
+and
+Qualcomm.
 
 Although the current implementation has evolved over time,
 the [original description](https://www.dropbox.com/s/06xf5wcsnhi0wht/pjl-chsm-thesis.pdf)
