@@ -27,9 +27,9 @@ namespace CHSM_NS {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-cluster::cluster( CHSM_CLUSTER_ARGS ) :
-  parent{ CHSM_PARENT_INIT },
-  history_{ chsm_history_ }
+cluster::cluster( args const &a ) :
+  parent{ a },
+  history_{ a.history_ }
 {
   active_child_ = last_child_ = nullptr;
 }

@@ -437,8 +437,8 @@ void cpp_declarer::emit_common( parent_info const &si,
     T_OUT << dec_indent T_ENDL;
   }
 
-  T_OUT << indent(2)
-        << PARENT_CLASS_PREFIX << base_name << "( CHSM_STATE_ARGS";
+  T_OUT << indent(2) << "explicit "
+        << PARENT_CLASS_PREFIX << base_name << "( args const &chsm_args";
 
   if ( formal_params != nullptr )
     T_OUT << ", " << formal_params;
@@ -472,7 +472,8 @@ void cpp_declarer::visit( chsm_info const &si ) {
         << "public:" T_ENDL;
 
   // emit constructor declaration
-  T_OUT << indent << sy->name() << '(' << param_list( si ) << ");" T_ENDL;
+  T_OUT << indent << "explicit " << sy->name()
+        << '(' << param_list( si ) << ");" T_ENDL;
 
   // emit destructor declaration
   T_OUT << indent << '~' << sy->name() << "();" T_ENDL;
@@ -553,7 +554,7 @@ void cpp_declarer::visit( child_info const& ) {
 }
 
 void cpp_declarer::visit( cluster_info const &si ) {
-  emit_common( si, "bool chsm_history_" );
+  emit_common( si );
 }
 
 void cpp_declarer::visit( event_info const &si ) {
@@ -600,12 +601,13 @@ void cpp_declarer::visit( user_event_info const &si ) {
   } // for
 
   // emit param_block constructor declaration
-  T_OUT << indent(3) << "param_block( " << CHSM_NS_ALIAS << "::event const&";
+  T_OUT << indent(3) << "explicit param_block( "
+        << CHSM_NS_ALIAS << "::event const&";
   if ( si.has_any_parameters() ) {
     T_OUT << param_list( si, param_data::EMIT_COMMA ) << ");" T_ENDL;
   } else {
     T_OUT << " event ) : " T_ENDL
-          << indent(4) << "base_param_block( event ) { }" T_ENDL;
+          << indent(4) << "base_param_block{ event } { }" T_ENDL;
   }
 
   // start of protected section
@@ -635,8 +637,8 @@ void cpp_declarer::visit( user_event_info const &si ) {
 
   // emit event constructor definition
   T_OUT << indent << "protected:" T_ENDL
-        << indent(2) << class_name( si )
-        << "( CHSM_EVENT_ARGS ) : base_event( CHSM_EVENT_INIT ) { }" T_ENDL;
+        << indent(2) << "explicit " << class_name( si )
+        << "( args const &chsm_args ) : base_event{ chsm_args } { }" T_ENDL;
 
   // emit rest of event declaration
   T_OUT << indent(2) << "friend class " << cc.sy_chsm_->name() << ';' T_ENDL
@@ -737,18 +739,18 @@ void cpp_definer::emit_common( parent_info const &si,
   // emit state constructor
   T_OUT << cc.sy_chsm_->name() << "::" << conv_buf << "::"
         << PARENT_CLASS_PREFIX
-        << state_base_name( name ) << "( CHSM_STATE_ARGS";
+        << state_base_name( name ) << "( args const &chsm_args";
 
   if ( formal_params != nullptr )
     T_OUT << ", " << formal_params;
 
   T_OUT << " ) :" T_ENDL
-        << indent << lib_class_name( si ) << "( CHSM_STATE_INIT, children_";
+        << indent << lib_class_name( si ) << "{ chsm_args";
 
   if ( actual_params != nullptr )
     T_OUT << ", " << actual_params;
 
-  T_OUT << " )";
+  T_OUT << " }";
 
   if ( &si != INFO_CONST( parent, SY_ROOT ) ) {
     //
@@ -879,7 +881,7 @@ void cpp_definer::visit( chsm_info const &si ) {
 }
 
 void cpp_definer::visit( cluster_info const &si ) {
-  emit_common( si, "bool chsm_history_", "chsm_history_" );
+  emit_common( si, "bool chsm_history_", "" );
 }
 
 void cpp_definer::visit( event_info const &si ) {
@@ -1039,7 +1041,9 @@ void cpp_initializer::emit_common( state_info const &si ) {
   char const *const chsm_ref =
     emitting_constructor_ ? "*this" : "chsm_machine_";
 
-  T_OUT << indent << state_base_name( sy->name() ) << "( " << chsm_ref
+  T_OUT << indent << state_base_name( sy->name() ) << "{ "
+        << "(" << lib_class_name( si ) << "::args const){ "
+        << chsm_ref
         << ", \"" << sy->name() << "\", "
         << (si.sy_parent_ != nullptr ?
             //
@@ -1097,7 +1101,7 @@ void cpp_initializer::visit( chsm_info const& ) {
 
 void cpp_initializer::visit( cluster_info const &si ) {
   emit_common( si );
-  T_OUT << ", " << (si.history_ ? "true" : "false") << " )";
+  T_OUT << ", " << (si.history_ ? "true" : "false") << " }";
 }
 
 void cpp_initializer::visit( event_info const &si ) {
@@ -1111,12 +1115,12 @@ void cpp_initializer::visit( global_info const& ) {
 
 void cpp_initializer::visit( set_info const &si ) {
   emit_common( si );
-  T_OUT << " )";
+  T_OUT << " }";
 }
 
 void cpp_initializer::visit( state_info const &si ) {
   emit_common( si );
-  T_OUT << " )";
+  T_OUT << " }";
 }
 
 void cpp_initializer::visit( transition_info const& ) {

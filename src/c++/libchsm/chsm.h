@@ -74,10 +74,6 @@ class   set;
 class   event;
 struct  transition;
 
-// macros to aid in argument-lists
-#define CHSM_FORMAL(X)  X
-#define CHSM_ACTUAL(X)  /* nothing */
-
 /**
  * A %state is the simplest kind of state in a machine: it has no child states.
  * A %state can either be active (in the state) or inactive (not in the state);
@@ -90,35 +86,6 @@ struct  transition;
  */
 class state {
 public:
-  //
-  // The constructor arguments must have horribly long names to avoid a name
-  // collision with user-defined state names in the mem-initializers in the
-  // resultant C++ code.  We use macros to make life easier.
-  //
-# define  CHSM_STATE_ARG_LIST(A)                        \
-          A(CHSM_NS::machine&) chsm_machine_,           \
-          A(char const*) chsm_name_,                    \
-          A(CHSM_NS::parent*) chsm_parent_,             \
-          A(CHSM_NS::state::action) chsm_enter_action_, \
-          A(CHSM_NS::state::action) chsm_exit_action_,  \
-          A(CHSM_NS::event*) chsm_enter_event_,         \
-          A(CHSM_NS::event*) chsm_exit_event_
-
-  /**
-   * Defines the constructor arguments for the CHSM::state class.
-   *
-   * @hideinitializer
-   */
-# define  CHSM_STATE_ARGS CHSM_STATE_ARG_LIST(CHSM_FORMAL)
-
-  /**
-   * Defines the base-class constructor argument \e mem-initializers for the
-   * CHSM::state class.
-   *
-   * @hideinitializer
-   */
-# define  CHSM_STATE_INIT CHSM_STATE_ARG_LIST(CHSM_ACTUAL)
-
   /**
    * The identification number of a %state.
    */
@@ -132,6 +99,19 @@ public:
    * @param trigger The event that triggered the transition.
    */
   typedef void (machine::*action)( state const &s, event const &trigger );
+
+  /**
+   * Constructor arguments.
+   */
+  struct args {
+    machine *machine_;
+    char const *name_;
+    parent *parent_;
+    state::action enter_action_;
+    state::action exit_action_;
+    event *enter_event_;
+    event *exit_event_;
+  };
 
   /**
    * Constructs a %state.
@@ -149,7 +129,7 @@ public:
    *  };
    * @endcode
    */
-  state( CHSM_STATE_ARGS );
+  explicit state( args const &a );
 
   /**
    * Destroys a state.
@@ -431,31 +411,20 @@ protected:
 public:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# define  CHSM_EVENT_ARG_LIST(A)                    \
-          A(CHSM_NS::machine*) chsm_machine_,       \
-          A(transition_list) chsm_transition_list_, \
-          A(char const*) chsm_name_,                \
-          A(CHSM_NS::event*) chsm_base_event_
-
   /**
-   * Defines the constructor arguments for the CHSM::event class.
-   *
-   * \hideinitializer
+   * Constructor arguments.
    */
-# define CHSM_EVENT_ARGS          CHSM_EVENT_ARG_LIST(CHSM_FORMAL)
-
-  /**
-   * Defines the base-class constructor argument \e mem-initializers for the
-   * CHSM::event class.
-   *
-   * @hideinitializer
-   */
-# define CHSM_EVENT_INIT          CHSM_EVENT_ARG_LIST(CHSM_ACTUAL)
+  struct args {
+    machine *machine_;
+    transition_list transitions_;
+    char const *name_;
+    event *base_event_;
+  };
 
   /**
    * Constructs an %event.
    */
-  event( CHSM_EVENT_ARGS );
+  explicit event( args const &a );
 
   /**
    * Destroys an %event.
@@ -848,36 +817,6 @@ public:
   typedef unsigned debug_mask;
 
   /**
-   * The constructor arguments must have horribly long names to avoid a name
-   * collision with user-defined constructor arguments in derived classes.  We
-   * use macros to make life easier.
-   *
-   * @hideinitializer
-   */
-# define  CHSM_MACHINE_ARG_LIST(A)                              \
-          A(CHSM_NS::state*) chsm_state_ A([]),                 \
-          A(CHSM_NS::cluster&) chsm_root_,                      \
-          A(CHSM_NS::transition const) chsm_transition_ A([]),  \
-          A(CHSM_NS::event const*) chsm_taken_ A([]),           \
-          A(CHSM_NS::state*) chsm_target_ A([]),                \
-          A(unsigned) chsm_transitions_in_machine_
-
-  /**
-   * Defines the constructor arguments for the CHSM::machine class.
-   *
-   * @hideinitializer
-   */
-# define CHSM_MACHINE_ARGS        CHSM_MACHINE_ARG_LIST(CHSM_FORMAL)
-
-  /**
-   * Defines the base-class constructor argument \e mem-initializers for the
-   * CHSM::machine class.
-   *
-   * @hideinitializer
-   */
-# define CHSM_MACHINE_INIT        CHSM_MACHINE_ARG_LIST(CHSM_ACTUAL)
-
-  /**
    * Destroys a %machine.
    */
   virtual ~machine();
@@ -1101,6 +1040,18 @@ public:
 
 protected:
   /**
+   * Constructor arguments.
+   */
+  struct args {
+    state *const *state_;
+    cluster *root_;
+    transition const *transition_;
+    unsigned transitions_in_machine_;
+    event const **taken_;
+    state **target_;
+  };
+
+  /**
    * Constructs a %machine.
    *
    * When deriving a class from %machine, the macros `CHSM_MACHINE_ARGS` and
@@ -1117,7 +1068,7 @@ protected:
    *  };
    * @endcode
    */
-  machine( CHSM_MACHINE_ARGS );
+  explicit machine( args const &a );
 
 private:
   /**
@@ -1217,26 +1168,14 @@ protected:
    */
   typedef id const* child_list;
 
+  /**
+   * Constructor arguments.
+   */
+  struct args : state::args {
+    child_list children_;
+  };
+
 public:
-# define  CHSM_PARENT_ARG_LIST(A)     \
-          CHSM_STATE_ARG_LIST(A),     \
-          A(child_list) chsm_children_
-
-  /**
-   * Defines the constructor arguments for the CHSM::parent class.
-   *
-   * @hideinitializer
-   */
-# define CHSM_PARENT_ARGS         CHSM_PARENT_ARG_LIST(CHSM_FORMAL)
-
-  /**
-   * Defines the base-class constructor argument \e mem-initializers for the
-   * CHSM::parent class.
-   *
-   * @hideinitializer
-   */
-# define CHSM_PARENT_INIT         CHSM_PARENT_ARG_LIST(CHSM_ACTUAL)
-
   /** The type of the value returned by iterator and const_iterator. */
   typedef state value_type;
 
@@ -1504,10 +1443,7 @@ protected:
    *
    * Constructs a parent.
    */
-  parent( CHSM_PARENT_ARGS ) :
-    state{ CHSM_STATE_INIT },
-    children_{ chsm_children_ }
-  {
+  explicit parent( args const &a ) : state{ a }, children_{ a.children_ } {
   }
 
   /**
@@ -1557,24 +1493,9 @@ private:
  */
 class cluster : public parent {
 public:
-# define  CHSM_CLUSTER_ARG_LIST(A) \
-          CHSM_PARENT_ARG_LIST(A), \
-          A(bool) chsm_history_
-
-  /**
-   * Defines the constructor arguments for the CHSM::cluster class.
-   *
-   * @hideinitializer
-   */
-# define  CHSM_CLUSTER_ARGS       CHSM_CLUSTER_ARG_LIST(CHSM_FORMAL)
-
-  /**
-   * Defines the base-class constructor argument \e mem-initializers for the
-   * CHSM::cluster class.
-   *
-   * @hideinitializer
-   */
-# define  CHSM_CLUSTER_INIT       CHSM_CLUSTER_ARG_LIST(CHSM_ACTUAL)
+  struct args : parent::args {
+    bool history_;
+  };
 
   /**
    * Constructs a cluster.
@@ -1583,7 +1504,7 @@ public:
    * `CHSM_CLUSTER_INIT` can be used to avoid having to deal with the many
    * constructor arguments.  See CHSM::state for an example.
    */
-  cluster( CHSM_CLUSTER_ARGS );
+  explicit cluster( args const &a );
 
   /**
    * Clears the history.
@@ -1646,23 +1567,11 @@ private:
  */
 class set : public parent {
 public:
-# define  CHSM_SET_ARG_LIST(A) \
-          CHSM_PARENT_ARG_LIST(A)
-
   /**
-   * Defines the constructor arguments for the CHSM::set class.
-   *
-   * @hideinitializer
+   * Constructor arguments.
    */
-# define  CHSM_SET_ARGS   CHSM_SET_ARG_LIST(CHSM_FORMAL)
-
-  /**
-   * Defines the base-class constructor argument \e mem-initializers for the
-   * CHSM::set class.
-   *
-   * @hideinitializer
-   */
-# define  CHSM_SET_INIT   CHSM_SET_ARG_LIST(CHSM_ACTUAL)
+  struct args : parent::args {
+  };
 
   /**
    * Constructs a %set.
@@ -1671,7 +1580,7 @@ public:
    * `CHSM_SET_INIT` can be used to avoid having to deal with the many
    * constructor arguments.  See CHSM::state for an example.
    */
-  set( CHSM_SET_ARGS ) : parent{ CHSM_PARENT_INIT } { }
+  explicit set( args const &a ) : parent{ a } { }
 
   /**
    * Enters a %set via a transition and also enters all of its child states.

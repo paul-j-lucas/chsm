@@ -29,21 +29,23 @@ namespace CHSM_NS {
 
 static unsigned const DEBUG_INDENT_SIZE = 2;  // spaces per indent
 
+static event::args const PRIME_EVENT_ARGS_{
+  nullptr, nullptr, "<prime>", nullptr
+};
+
 state const *const  machine::NIL_         = nullptr;
 state::id const     machine::NO_STATE_ID_ = -1;
-
-event const         machine::PRIME_EVENT_
-                      ( nullptr, nullptr, "<prime>", nullptr );
+event const         machine::PRIME_EVENT_{ PRIME_EVENT_ARGS_ };
 
 ///////////////////////////////////////////////////////////////////////////////
 
-machine::machine( CHSM_MACHINE_ARGS ) :
-  state_{ chsm_state_ },
-  root_{ chsm_root_ },
-  transition_{ chsm_transition_ },
-  transitions_in_machine_{ chsm_transitions_in_machine_ },
-  taken_{ chsm_taken_ },
-  target_{ chsm_target_ },
+machine::machine( args const &a ) :
+  state_{ a.state_ },
+  root_{ *a.root_ },
+  transition_{ a.transition_ },
+  transitions_in_machine_{ a.transitions_in_machine_ },
+  taken_{ a.taken_ },
+  target_{ a.target_ },
   in_progress_{ false },
   debug_indent_{ 0 },
   debug_state_{ DEBUG_NONE }

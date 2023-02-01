@@ -41,9 +41,9 @@ using namespace std;
  * A %stack_machine is-a CHSM::machine that additionally maintains a stack of
  * states.
  */
-class stack_machine : public CHSM::machine {
+class stack_machine final : public CHSM::machine {
 public:
-  stack_machine( CHSM_MACHINE_ARGS ) : CHSM::machine( CHSM_MACHINE_INIT ) { }
+  explicit stack_machine( args const &a ) : CHSM::machine{ a } { }
 
   void push_state( CHSM::state *s ) {
     state_stack_.push( s );
@@ -68,12 +68,12 @@ CHSM::state* stack_machine::pop_state() {
  * A %push_on_exit is-a CHSM::state that pushes itself onto the stack of a
  * stack_machine upon exit.
  */
-class push_on_exit : public CHSM::state {
+class push_on_exit final : public CHSM::state {
 public:
-  push_on_exit( CHSM_STATE_ARGS ) : CHSM::state( CHSM_STATE_INIT ) { }
+  explicit push_on_exit( args const &a ) : CHSM::state{ a } { }
 
 protected:
-  bool exit( CHSM::event const&, CHSM::state* ) override;
+  bool exit( CHSM::event const&, CHSM::state* ) final;
 };
 
 static int exit_code = 0;

@@ -40,13 +40,13 @@ inline bool event::is_debug_events() const {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-event::event( CHSM_EVENT_ARGS ) :
-  machine_{ *chsm_machine_ },
+event::event( args const &a ) :
+  machine_{ *a.machine_ },
   in_progress_{ 0 },
   param_block_{ nullptr },
-  name_{ chsm_name_ },
-  base_event_{ chsm_base_event_ },
-  transitions_{ chsm_transition_list_ }
+  name_{ a.name_ },
+  base_event_{ a.base_event_ },
+  transitions_{ a.transitions_ }
 {
   // do nothing else
 }

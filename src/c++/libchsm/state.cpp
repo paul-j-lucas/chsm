@@ -29,13 +29,13 @@ namespace CHSM_NS {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-state::state( CHSM_STATE_ARGS ) :
-  machine_{ chsm_machine_ },
-  name_{ chsm_name_ },
-  parent_{ chsm_parent_ },
+state::state( args const &a ) :
+  machine_{ *a.machine_ },
+  name_{ a.name_ },
+  parent_{ a.parent_ },
   state_{ STATE_INACTIVE },
-  enter_action_{ chsm_enter_action_ }, exit_action_{ chsm_exit_action_ },
-  enter_event_{ chsm_enter_event_ }, exit_event_{ chsm_exit_event_ }
+  enter_action_{ a.enter_action_ }, exit_action_{ a.exit_action_ },
+  enter_event_{ a.enter_event_ }, exit_event_{ a.exit_event_ }
 {
   // do nothing else
 }
